@@ -1,4 +1,8 @@
 <p align="center">
+  <img src="assets/logo.svg" width="128" height="128" alt="Claude Carry logo">
+</p>
+
+<p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset=".github/banner.svg">
     <source media="(prefers-color-scheme: light)" srcset=".github/banner.svg">
