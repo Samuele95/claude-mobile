@@ -82,12 +82,12 @@ class ConnectionScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Claude Mobile',
+                'Claude Carry',
                 style: Theme.of(context).textTheme.headlineLarge,
               ),
               const SizedBox(height: 8),
               Text(
-                'Connect to your server',
+                'Your AI dev environment, in your pocket.',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: Theme.of(context)
                           .colorScheme

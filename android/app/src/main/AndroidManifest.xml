@@ -5,7 +5,7 @@
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
-        android:label="Claude Mobile"
+        android:label="Claude Carry"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

@@ -10,6 +10,6 @@ void main() {
     );
 
     // Verify the app renders without crashing.
-    expect(find.text('Claude Mobile'), findsOneWidget);
+    expect(find.text('Claude Carry'), findsOneWidget);
   });
 }

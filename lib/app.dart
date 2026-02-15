@@ -13,7 +13,7 @@ class ClaudeMobileApp extends ConsumerWidget {
     final prefs = ref.watch(preferencesProvider);
 
     return MaterialApp(
-      title: 'Claude Mobile',
+      title: 'Claude Carry',
       theme: prefs.themeData,
       debugShowCheckedModeBanner: false,
       home: const AppShell(),

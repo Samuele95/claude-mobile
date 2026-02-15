@@ -37,7 +37,7 @@ class QuickPromptService {
       final profiles = await _profiles.getAll();
       if (profiles.isEmpty) {
         await _showNotification(
-            'No server configured', 'Add a server in Claude Mobile first.');
+            'No server configured', 'Add a server in Claude Carry first.');
         return;
       }
 
