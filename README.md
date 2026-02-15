@@ -1,8 +1,4 @@
 <p align="center">
-  <img src="assets/logo.svg" width="128" height="128" alt="Claude Carry logo">
-</p>
-
-<p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset=".github/banner.svg">
     <source media="(prefers-color-scheme: light)" srcset=".github/banner.svg">
@@ -29,6 +25,10 @@
 </p>
 
 ---
+
+<p align="center">
+  <img src="assets/logo.svg" width="128" height="128" alt="Claude Carry logo">
+</p>
 
 Claude Carry turns any device into a remote Claude Code terminal. SSH into your dev server from anywhere — the couch, the bus, the coffee shop — and let Claude refactor your codebase, write tests, or debug that production issue while you're away from your desk.
 
