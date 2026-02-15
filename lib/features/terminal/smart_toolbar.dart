@@ -38,6 +38,16 @@ class _SmartToolbarState extends ConsumerState<SmartToolbar> {
     setState(() => _ctrlActive = !_ctrlActive);
   }
 
+  Future<void> _onPaste() async {
+    if (ref.read(preferencesProvider).haptics) {
+      HapticFeedback.lightImpact();
+    }
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    if (data?.text != null && data!.text!.isNotEmpty) {
+      widget.controller.sendText(data.text!);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -85,6 +95,10 @@ class _SmartToolbarState extends ConsumerState<SmartToolbar> {
             onTap: _toggleCtrl,
           ),
           _ToolbarDivider(),
+          _ToolbarButton(
+            icon: Icons.content_paste,
+            onTap: _onPaste,
+          ),
           _ToolbarButton(
             icon: Icons.terminal,
             onTap: widget.onCommandPalette,

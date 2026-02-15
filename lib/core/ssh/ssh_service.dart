@@ -17,6 +17,11 @@ class SshService {
   int _lastWidth = 80;
   int _lastHeight = 24;
 
+  bool autoReconnect = false;
+  int _reconnectAttempts = 0;
+  Timer? _reconnectTimer;
+  static const _maxReconnectAttempts = 5;
+
   final _stateController = StreamController<SshConnectionState>.broadcast();
   final _outputController = StreamController<Uint8List>.broadcast();
 
@@ -45,6 +50,7 @@ class SshService {
     _password = password;
     _lastWidth = initialWidth;
     _lastHeight = initialHeight;
+    _reconnectAttempts = 0;
     _setState(SshConnectionState.connecting);
 
     try {
@@ -153,9 +159,24 @@ class SshService {
   void _handleDisconnect() {
     if (_state == SshConnectionState.disconnected) return;
     _setState(SshConnectionState.disconnected);
+
+    if (autoReconnect && _reconnectAttempts < _maxReconnectAttempts) {
+      final delay = Duration(
+          seconds: 1 << _reconnectAttempts); // 1s, 2s, 4s, 8s, 16s
+      _reconnectAttempts++;
+      _reconnectTimer?.cancel();
+      _reconnectTimer = Timer(delay, () async {
+        if (autoReconnect) {
+          await reconnect();
+        }
+      });
+    }
   }
 
   Future<void> disconnect() async {
+    autoReconnect = false;
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
     _shell?.close();
     _client?.close();
     _shell = null;
@@ -164,6 +185,8 @@ class SshService {
   }
 
   void dispose() {
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
     disconnect();
     _stateController.close();
     _outputController.close();

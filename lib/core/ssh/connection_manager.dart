@@ -31,6 +31,7 @@ class ConnectionManager {
     final ssh = SshService(keyManager: _keyManager);
     final sftp = SftpService();
 
+    ssh.autoReconnect = true;
     _sshServices[sessionId] = ssh;
     _sftpServices[sessionId] = sftp;
 

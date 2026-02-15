@@ -8,6 +8,8 @@ class AppPreferences {
   final bool haptics;
   final bool notifyOnIdle;
   final int idleThresholdSeconds;
+  final bool wakeLock;
+  final bool autoReconnect;
 
   const AppPreferences({
     this.themeName = 'dark',
@@ -15,6 +17,8 @@ class AppPreferences {
     this.haptics = true,
     this.notifyOnIdle = true,
     this.idleThresholdSeconds = 10,
+    this.wakeLock = true,
+    this.autoReconnect = true,
   });
 
   AppPreferences copyWith({
@@ -23,6 +27,8 @@ class AppPreferences {
     bool? haptics,
     bool? notifyOnIdle,
     int? idleThresholdSeconds,
+    bool? wakeLock,
+    bool? autoReconnect,
   }) {
     return AppPreferences(
       themeName: themeName ?? this.themeName,
@@ -30,6 +36,8 @@ class AppPreferences {
       haptics: haptics ?? this.haptics,
       notifyOnIdle: notifyOnIdle ?? this.notifyOnIdle,
       idleThresholdSeconds: idleThresholdSeconds ?? this.idleThresholdSeconds,
+      wakeLock: wakeLock ?? this.wakeLock,
+      autoReconnect: autoReconnect ?? this.autoReconnect,
     );
   }
 
@@ -51,6 +59,9 @@ class PreferencesNotifier extends Notifier<AppPreferences> {
       state = state.copyWith(notifyOnIdle: enabled);
   void setIdleThreshold(int seconds) =>
       state = state.copyWith(idleThresholdSeconds: seconds);
+  void setWakeLock(bool enabled) => state = state.copyWith(wakeLock: enabled);
+  void setAutoReconnect(bool enabled) =>
+      state = state.copyWith(autoReconnect: enabled);
 }
 
 final preferencesProvider =

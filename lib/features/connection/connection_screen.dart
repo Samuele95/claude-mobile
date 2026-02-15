@@ -166,6 +166,8 @@ class ConnectionScreen extends ConsumerWidget {
                                 profile: profile,
                                 onTap: () =>
                                     _connect(context, ref, profile),
+                                onEdit: () =>
+                                    _showEditSheet(context, profile),
                                 onDelete: () =>
                                     _deleteProfile(context, ref, profile),
                               ),
@@ -199,6 +201,17 @@ class ConnectionScreen extends ConsumerWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (_) => const AddServerSheet(),
+    );
+  }
+
+  void _showEditSheet(BuildContext context, ServerProfile profile) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => AddServerSheet(existing: profile),
     );
   }
 }
@@ -312,11 +325,13 @@ class _EmptyState extends StatelessWidget {
 class _ProfileCard extends StatelessWidget {
   final ServerProfile profile;
   final VoidCallback onTap;
+  final VoidCallback onEdit;
   final VoidCallback onDelete;
 
   const _ProfileCard({
     required this.profile,
     required this.onTap,
+    required this.onEdit,
     required this.onDelete,
   });
 
@@ -357,6 +372,10 @@ class _ProfileCard extends StatelessWidget {
                     ),
                   ],
                 ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.edit_outlined, size: 20),
+                onPressed: onEdit,
               ),
               IconButton(
                 icon: const Icon(Icons.delete_outline, size: 20),

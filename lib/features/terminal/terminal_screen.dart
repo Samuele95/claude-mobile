@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xterm/xterm.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../core/providers.dart';
 import '../../core/models/connection_state.dart';
 import '../../core/models/server_profile.dart';
@@ -25,6 +26,28 @@ class TerminalScreen extends ConsumerStatefulWidget {
 
 class _TerminalScreenState extends ConsumerState<TerminalScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
+  late final FocusNode _terminalFocusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _terminalFocusNode = FocusNode();
+    final prefs = ref.read(preferencesProvider);
+    if (prefs.wakeLock) {
+      WakelockPlus.enable();
+    }
+  }
+
+  @override
+  void dispose() {
+    _terminalFocusNode.dispose();
+    WakelockPlus.disable();
+    super.dispose();
+  }
+
+  void _refocusTerminal() {
+    _terminalFocusNode.requestFocus();
+  }
 
   void _showCommandPalette() {
     final activeId = ref.read(activeSessionIdProvider);
@@ -37,7 +60,7 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
       builder: (_) => CommandPalette(
         onSelect: (cmd) => controller.sendText('$cmd\n'),
       ),
-    );
+    ).then((_) => _refocusTerminal());
   }
 
   Future<void> _attachFile() async {
@@ -83,6 +106,7 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
         );
       }
     }
+    _refocusTerminal();
   }
 
   void _showConnectionInfo(Session session) {
@@ -139,7 +163,7 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
           ],
         ),
       ),
-    );
+    ).then((_) => _refocusTerminal());
   }
 
   Future<void> _disconnectSession(String sessionId) async {
@@ -182,12 +206,16 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
 
     return Scaffold(
       key: _scaffoldKey,
+      resizeToAvoidBottomInset: true,
       endDrawer: activeId != null
           ? Drawer(
               width: 320,
               child: FilePanel(sessionId: activeId),
             )
           : null,
+      onEndDrawerChanged: (isOpen) {
+        if (!isOpen) _refocusTerminal();
+      },
       body: SafeArea(
         child: Column(
           children: [
@@ -207,20 +235,30 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
                 onSettings: () => Navigator.of(context).push(
                   MaterialPageRoute(
                       builder: (_) => const SettingsScreen()),
-                ),
+                ).then((_) => _refocusTerminal()),
                 onConnectionInfo: () =>
                     _showConnectionInfo(activeSession!),
               ),
             Expanded(
               child: controller != null
-                  ? TerminalView(
-                      controller.terminal,
-                      theme: AppTerminalThemes.dark,
-                      textStyle: TerminalStyle(
-                        fontSize: prefs.fontSize,
-                        fontFamily: 'JetBrainsMono',
+                  ? MediaQuery.removePadding(
+                      context: context,
+                      removeTop: true,
+                      removeBottom: true,
+                      child: TerminalView(
+                        controller.terminal,
+                        focusNode: _terminalFocusNode,
+                        autofocus: true,
+                        deleteDetection: true,
+                        theme: AppTerminalThemes.fromPreferences(
+                            prefs.themeName),
+                        textStyle: TerminalStyle(
+                          fontSize: prefs.fontSize,
+                          fontFamily: 'JetBrainsMono',
+                        ),
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 4),
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
                     )
                   : const Center(child: Text('No active session')),
             ),

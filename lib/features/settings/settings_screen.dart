@@ -38,6 +38,24 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           const Divider(),
+          _SectionHeader('Terminal'),
+          SwitchListTile(
+            title: const Text('Keep screen awake'),
+            subtitle: const Text('Prevent sleep during terminal sessions'),
+            secondary: const Icon(Icons.visibility_outlined),
+            value: prefs.wakeLock,
+            onChanged: (v) =>
+                ref.read(preferencesProvider.notifier).setWakeLock(v),
+          ),
+          SwitchListTile(
+            title: const Text('Auto-reconnect'),
+            subtitle: const Text('Reconnect automatically on disconnect'),
+            secondary: const Icon(Icons.sync_outlined),
+            value: prefs.autoReconnect,
+            onChanged: (v) =>
+                ref.read(preferencesProvider.notifier).setAutoReconnect(v),
+          ),
+          const Divider(),
           _SectionHeader('Feedback'),
           SwitchListTile(
             title: const Text('Haptic feedback'),

@@ -53,4 +53,37 @@ class AppTerminalThemes {
     searchHitBackgroundCurrent: dark.searchHitBackgroundCurrent,
     searchHitForeground: dark.searchHitForeground,
   );
+
+  // Catppuccin Latte palette
+  static final light = TerminalTheme(
+    cursor: const Color(0xFF4C4F69),
+    selection: const Color(0x407C3AED),
+    foreground: const Color(0xFF4C4F69),
+    background: const Color(0xFFEFF1F5),
+    black: const Color(0xFF5C5F77),
+    red: const Color(0xFFD20F39),
+    green: const Color(0xFF40A02B),
+    yellow: const Color(0xFFDF8E1D),
+    blue: const Color(0xFF1E66F5),
+    magenta: const Color(0xFFEA76CB),
+    cyan: const Color(0xFF179299),
+    white: const Color(0xFFACB0BE),
+    brightBlack: const Color(0xFF6C6F85),
+    brightRed: const Color(0xFFD20F39),
+    brightGreen: const Color(0xFF40A02B),
+    brightYellow: const Color(0xFFDF8E1D),
+    brightBlue: const Color(0xFF1E66F5),
+    brightMagenta: const Color(0xFFEA76CB),
+    brightCyan: const Color(0xFF179299),
+    brightWhite: const Color(0xFF4C4F69),
+    searchHitBackground: const Color(0xFF7C3AED),
+    searchHitBackgroundCurrent: const Color(0xFFA855F7),
+    searchHitForeground: const Color(0xFFFFFFFF),
+  );
+
+  static TerminalTheme fromPreferences(String themeName) => switch (themeName) {
+        'amoled' => amoled,
+        'light' => light,
+        _ => dark,
+      };
 }
