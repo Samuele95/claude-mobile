@@ -29,12 +29,12 @@ class KeyManager {
     final keyPair = OpenSSHEd25519KeyPair(
       publicKeyBytes,
       privateKeyBytes,
-      'claude-mobile',
+      'claude-carry',
     );
 
     final privateKeyPem = keyPair.toPem();
     final publicKeyEncoded = base64.encode(keyPair.toPublicKey().encode());
-    final publicKey = 'ssh-ed25519 $publicKeyEncoded claude-mobile';
+    final publicKey = 'ssh-ed25519 $publicKeyEncoded claude-carry';
 
     await _storage.write(key: _appKeyPrivate, value: privateKeyPem);
     await _storage.write(key: _appKeyPublic, value: publicKey);

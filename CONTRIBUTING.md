@@ -1,4 +1,4 @@
-# Contributing to Claude Mobile
+# Contributing to Claude Carry
 
 Thanks for your interest in contributing! This guide will help you get started.
 
@@ -14,8 +14,8 @@ Thanks for your interest in contributing! This guide will help you get started.
 ### Setup
 
 ```bash
-git clone https://github.com/Samuele95/claude-mobile.git
-cd claude-mobile
+git clone https://github.com/Samuele95/claude-carry.git
+cd claude-carry
 flutter pub get
 flutter analyze   # should show 0 issues
 ```
@@ -59,7 +59,7 @@ When adding a new feature, place it in the appropriate `features/` subdirectory 
 
 ### Good First Issues
 
-Look for issues labeled [`good first issue`](https://github.com/Samuele95/claude-mobile/labels/good%20first%20issue).
+Look for issues labeled [`good first issue`](https://github.com/Samuele95/claude-carry/labels/good%20first%20issue).
 
 ### Ideas
 
@@ -67,11 +67,11 @@ Look for issues labeled [`good first issue`](https://github.com/Samuele95/claude
 - **Tests** — unit and widget tests are sparse
 - **Documentation** — usage guides, feature deep-dives
 - **Accessibility** — screen reader support, contrast improvements
-- **New features** — check the [issues](https://github.com/Samuele95/claude-mobile/issues) for feature requests
+- **New features** — check the [issues](https://github.com/Samuele95/claude-carry/issues) for feature requests
 
 ## Reporting Bugs
 
-Use the [bug report template](https://github.com/Samuele95/claude-mobile/issues/new?template=bug_report.yml) and include:
+Use the [bug report template](https://github.com/Samuele95/claude-carry/issues/new?template=bug_report.yml) and include:
 
 - Steps to reproduce
 - Device model and OS version

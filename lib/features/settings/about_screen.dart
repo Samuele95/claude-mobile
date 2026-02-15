@@ -4,8 +4,8 @@ import 'package:flutter/services.dart';
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
-  static const _version = '1.2.0';
-  static const _repoUrl = 'https://github.com/Samuele95/claude-mobile';
+  static const _version = '1.3.0';
+  static const _repoUrl = 'https://github.com/Samuele95/claude-carry';
 
   @override
   Widget build(BuildContext context) {
@@ -121,7 +121,7 @@ class AboutScreen extends StatelessWidget {
                 ListTile(
                   leading: const Icon(Icons.public_rounded),
                   title: const Text('GitHub Repository'),
-                  subtitle: const Text('Samuele95/claude-mobile'),
+                  subtitle: const Text('Samuele95/claude-carry'),
                   trailing: const Icon(Icons.open_in_new, size: 18),
                   onTap: () => _copyToClipboard(context, _repoUrl),
                 ),

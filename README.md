@@ -11,11 +11,11 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Samuele95/claude-mobile/releases"><img src="https://img.shields.io/github/v/release/Samuele95/claude-mobile?style=for-the-badge&color=7C3AED&label=Download" alt="Download" /></a>
+  <a href="https://github.com/Samuele95/claude-carry/releases"><img src="https://img.shields.io/github/v/release/Samuele95/claude-carry?style=for-the-badge&color=7C3AED&label=Download" alt="Download" /></a>
   &nbsp;
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/Samuele95/claude-mobile?style=for-the-badge&color=89B4FA" alt="MIT License" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/Samuele95/claude-carry?style=for-the-badge&color=89B4FA" alt="MIT License" /></a>
   &nbsp;
-  <a href="https://github.com/Samuele95/claude-mobile/stargazers"><img src="https://img.shields.io/github/stars/Samuele95/claude-mobile?style=for-the-badge&color=F9E2AF" alt="Stars" /></a>
+  <a href="https://github.com/Samuele95/claude-carry/stargazers"><img src="https://img.shields.io/github/stars/Samuele95/claude-carry?style=for-the-badge&color=F9E2AF" alt="Stars" /></a>
 </p>
 
 <p align="center">
@@ -52,7 +52,7 @@ No browser. No VPN portal. Just open the app, tap a server, and you're in.
 
 ## ⚡ Quick Start
 
-**1.** Download the latest build from [**Releases**](https://github.com/Samuele95/claude-mobile/releases) and install it
+**1.** Download the latest build from [**Releases**](https://github.com/Samuele95/claude-carry/releases) and install it
 
 **2.** Add your server (hostname, port, username, auth method)
 
@@ -178,8 +178,8 @@ lib/
 ## 🔨 Build from Source
 
 ```bash
-git clone https://github.com/Samuele95/claude-mobile.git
-cd claude-mobile
+git clone https://github.com/Samuele95/claude-carry.git
+cd claude-carry
 flutter pub get
 
 # Android
@@ -201,7 +201,7 @@ flutter build apk --debug     # or --release
 We'd love your help. Whether it's a bug fix, new feature, screenshots, or just better docs — every contribution matters.
 
 1. Read the [**Contributing Guide**](CONTRIBUTING.md)
-2. Check the [**open issues**](https://github.com/Samuele95/claude-mobile/issues)
+2. Check the [**open issues**](https://github.com/Samuele95/claude-carry/issues)
 3. Fork, branch, code, PR
 
 <details>
