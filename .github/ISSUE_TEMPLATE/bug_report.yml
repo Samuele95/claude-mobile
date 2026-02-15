@@ -1,0 +1,65 @@
+name: Bug Report
+description: Report a bug or unexpected behavior
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug! Please fill out the sections below so we can reproduce and fix the issue.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened? What did you expect to happen?
+      placeholder: "When I tap the connect button, the app crashes instead of connecting..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Minimal steps to reproduce the behavior
+      placeholder: |
+        1. Open the app
+        2. Tap "Add Server"
+        3. Fill in fields and tap "Save"
+        4. See error...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: version
+    attributes:
+      label: App Version
+      description: Which version of Claude Mobile are you using?
+      options:
+        - v1.2.0
+        - v1.1.0
+        - v1.0.0
+        - Built from source (master)
+    validations:
+      required: true
+
+  - type: input
+    id: device
+    attributes:
+      label: Device & Android Version
+      description: "e.g. Pixel 8 / Android 15, Samsung Galaxy S24 / Android 14"
+      placeholder: "Pixel 8 / Android 15"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / Stack Trace
+      description: Paste any relevant error output or stack trace (optional)
+      render: shell
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: If applicable, add screenshots to help explain the problem (optional)
