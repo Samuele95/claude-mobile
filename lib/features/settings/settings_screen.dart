@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'about_screen.dart';
 import 'preferences_provider.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -75,6 +76,15 @@ class SettingsScreen extends ConsumerWidget {
             value: prefs.notifyOnIdle,
             onChanged: (v) =>
                 ref.read(preferencesProvider.notifier).setNotifyOnIdle(v),
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.info_outline_rounded),
+            title: const Text('About Claude Carry'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const AboutScreen()),
+            ),
           ),
         ],
       ),
