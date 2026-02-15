@@ -7,7 +7,8 @@ Thanks for your interest in contributing! This guide will help you get started.
 ### Prerequisites
 
 - Flutter 3.41+ / Dart 3.11+
-- Android SDK with Build-Tools 35, NDK 28.2, CMake 3.22
+- Android SDK with Build-Tools 35, NDK 28.2, CMake 3.22 (for Android builds)
+- Xcode 16+ (for iOS builds, macOS only)
 - Java 21 (OpenJDK / Temurin)
 
 ### Setup
@@ -73,7 +74,7 @@ Look for issues labeled [`good first issue`](https://github.com/Samuele95/claude
 Use the [bug report template](https://github.com/Samuele95/claude-mobile/issues/new?template=bug_report.yml) and include:
 
 - Steps to reproduce
-- Device model and Android version
+- Device model and OS version
 - App version
 - Any error logs or stack traces
 

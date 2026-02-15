@@ -45,8 +45,8 @@ body:
   - type: input
     id: device
     attributes:
-      label: Device & Android Version
-      description: "e.g. Pixel 8 / Android 15, Samsung Galaxy S24 / Android 14"
+      label: Device & OS Version
+      description: "e.g. Pixel 8 / Android 15, iPhone 16 / iOS 18, Ubuntu 24.04"
       placeholder: "Pixel 8 / Android 15"
     validations:
       required: true

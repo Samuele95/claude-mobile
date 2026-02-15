@@ -26,9 +26,11 @@
 
 ---
 
-Claude Carry turns your Android phone into a remote Claude Code terminal. SSH into your dev server from anywhere — the couch, the bus, the coffee shop — and let Claude refactor your codebase, write tests, or debug that production issue while you're away from your desk.
+Claude Carry turns any device into a remote Claude Code terminal. SSH into your dev server from anywhere — the couch, the bus, the coffee shop — and let Claude refactor your codebase, write tests, or debug that production issue while you're away from your desk.
 
 No browser. No VPN portal. Just open the app, tap a server, and you're in.
+
+> **Currently available on Android.** iOS and desktop coming soon.
 
 ---
 
@@ -48,7 +50,7 @@ No browser. No VPN portal. Just open the app, tap a server, and you're in.
 
 ## ⚡ Quick Start
 
-**1.** Grab the APK from [**Releases**](https://github.com/Samuele95/claude-mobile/releases) and install it
+**1.** Download the latest build from [**Releases**](https://github.com/Samuele95/claude-mobile/releases) and install it
 
 **2.** Add your server (hostname, port, username, auth method)
 
@@ -98,16 +100,16 @@ No need to `scp` from a separate app.
 
 | | |
 |---|---|
-| 📂 **Dual-Pane Browser** | Your phone's files on the left, the server on the right |
+| 📂 **Dual-Pane Browser** | Local files on the left, the server on the right |
 | ⬆️ **Upload & Download** | Transfer files between devices with progress tracking |
 | 📎 **Attach to Terminal** | Upload a file and paste its remote path in one tap |
-| 🗂️ **Full CRUD** | Create directories, rename, delete — all from your phone |
+| 🗂️ **Full CRUD** | Create directories, rename, delete — all from the app |
 
 ### Connection That Just Works
 
 | | |
 |---|---|
-| 🔑 **SSH Key Auth** | Ed25519 keys, auto-generated and stored in the Android Keystore |
+| 🔑 **SSH Key Auth** | Ed25519 keys, auto-generated and stored securely on-device |
 | 🔒 **Password Auth** | Encrypted on-device via `flutter_secure_storage` |
 | 📝 **Server Profiles** | Save, edit, and manage multiple servers |
 | 🏠 **Home Widget** | Quick-prompt widget — fire off a Claude query without even opening the app |
@@ -177,10 +179,18 @@ lib/
 git clone https://github.com/Samuele95/claude-mobile.git
 cd claude-mobile
 flutter pub get
+
+# Android
 flutter build apk --debug     # or --release
+
+# iOS (coming soon)
+# flutter build ios
+
+# Desktop (coming soon)
+# flutter build linux / macos / windows
 ```
 
-**Requirements:** Flutter 3.41+ · Dart 3.11+ · Java 21 · Android SDK 35
+**Requirements:** Flutter 3.41+ · Dart 3.11+ · Java 21 (for Android builds)
 
 ---
 
@@ -199,7 +209,8 @@ We'd love your help. Whether it's a bug fix, new feature, screenshots, or just b
 - 🧪 **Unit and widget tests** — coverage is low
 - 🌍 **Internationalization** — translations welcome
 - ♿ **Accessibility** — screen reader support, contrast
-- 🍎 **iOS port** — the architecture is platform-agnostic
+- 🍎 **iOS port** — Flutter makes this straightforward
+- 🖥️ **Desktop port** — Linux, macOS, Windows
 
 </details>
 
