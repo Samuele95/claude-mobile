@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../terminal/terminal_screen.dart';
+import '../../core/providers.dart';
 import 'remote_browser.dart';
 import 'local_browser.dart';
 
 class FilePanel extends ConsumerWidget {
-  const FilePanel({super.key});
+  final String sessionId;
+
+  const FilePanel({super.key, required this.sessionId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final controller = ref.read(terminalControllerProvider);
+    final controller =
+        ref.read(sessionTerminalControllerProvider(sessionId));
 
     return SafeArea(
       child: Column(
@@ -46,8 +49,9 @@ class FilePanel extends ConsumerWidget {
                 ),
                 Expanded(
                   child: RemoteBrowser(
+                    sessionId: sessionId,
                     onSendToTerminal: (path) {
-                      controller.sendText(path);
+                      controller?.sendText(path);
                       Navigator.of(context).pop();
                     },
                   ),

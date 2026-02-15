@@ -9,6 +9,7 @@ class ServerProfile {
   final int port;
   final String username;
   final AuthMethod authMethod;
+  final String startupCommand;
   final DateTime createdAt;
 
   const ServerProfile({
@@ -18,6 +19,7 @@ class ServerProfile {
     this.port = 22,
     required this.username,
     this.authMethod = AuthMethod.password,
+    this.startupCommand = 'claude --dangerously-skip-permissions',
     required this.createdAt,
   });
 
@@ -27,6 +29,7 @@ class ServerProfile {
     int? port,
     String? username,
     AuthMethod? authMethod,
+    String? startupCommand,
   }) {
     return ServerProfile(
       id: id,
@@ -35,6 +38,7 @@ class ServerProfile {
       port: port ?? this.port,
       username: username ?? this.username,
       authMethod: authMethod ?? this.authMethod,
+      startupCommand: startupCommand ?? this.startupCommand,
       createdAt: createdAt,
     );
   }
@@ -46,6 +50,7 @@ class ServerProfile {
         'port': port,
         'username': username,
         'authMethod': authMethod.name,
+        'startupCommand': startupCommand,
         'createdAt': createdAt.toIso8601String(),
       };
 
@@ -59,6 +64,8 @@ class ServerProfile {
           (e) => e.name == (json['authMethod'] as String?),
           orElse: () => AuthMethod.password,
         ),
+        startupCommand: json['startupCommand'] as String? ??
+            'claude --dangerously-skip-permissions',
         createdAt: DateTime.parse(json['createdAt'] as String),
       );
 

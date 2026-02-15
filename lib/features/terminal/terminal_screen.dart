@@ -4,19 +4,17 @@ import 'package:xterm/xterm.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../core/providers.dart';
 import '../../core/models/connection_state.dart';
+import '../../core/models/server_profile.dart';
+import '../../core/models/session.dart';
 import '../../core/models/transfer_item.dart';
+import '../../core/utils/dialogs.dart';
 import '../../theme/terminal_theme.dart';
 import '../files/file_panel.dart';
-import 'terminal_controller.dart';
+import '../settings/settings_screen.dart';
+import '../settings/preferences_provider.dart';
 import 'smart_toolbar.dart';
 import 'command_palette.dart';
-
-final terminalControllerProvider = Provider<SshTerminalController>((ref) {
-  final ssh = ref.watch(sshServiceProvider);
-  final controller = SshTerminalController(ssh: ssh);
-  ref.onDispose(() => controller.dispose());
-  return controller;
-});
+import 'session_tab_bar.dart';
 
 class TerminalScreen extends ConsumerStatefulWidget {
   const TerminalScreen({super.key});
@@ -29,7 +27,11 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   void _showCommandPalette() {
-    final controller = ref.read(terminalControllerProvider);
+    final activeId = ref.read(activeSessionIdProvider);
+    if (activeId == null) return;
+    final controller =
+        ref.read(sessionTerminalControllerProvider(activeId));
+    if (controller == null) return;
     showModalBottomSheet(
       context: context,
       builder: (_) => CommandPalette(
@@ -39,14 +41,19 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
   }
 
   Future<void> _attachFile() async {
+    final activeId = ref.read(activeSessionIdProvider);
+    if (activeId == null) return;
+
     final result = await FilePicker.platform.pickFiles();
     if (result == null || result.files.isEmpty) return;
 
     final file = result.files.first;
     if (file.path == null) return;
 
-    final sftp = ref.read(sftpServiceProvider);
-    final controller = ref.read(terminalControllerProvider);
+    final sftp = ref.read(sessionSftpProvider(activeId));
+    final controller =
+        ref.read(sessionTerminalControllerProvider(activeId));
+    if (sftp == null || controller == null) return;
     final remotePath = '/tmp/${file.name}';
 
     final item = TransferItem(
@@ -78,46 +85,151 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
     }
   }
 
+  void _showConnectionInfo(Session session) {
+    final profile = session.profile;
+    final uptime = DateTime.now().difference(session.createdAt);
+    final uptimeStr = '${uptime.inMinutes}m ${uptime.inSeconds % 60}s';
+
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Connection Info',
+                style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 16),
+            _InfoRow('Host', '${profile.host}:${profile.port}'),
+            _InfoRow('User', profile.username),
+            _InfoRow('Auth', profile.authMethod.name),
+            _InfoRow('Status', session.state.label),
+            _InfoRow('Uptime', uptimeStr),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      ref
+                          .read(connectionManagerProvider)
+                          .reconnectSession(session.id);
+                    },
+                    icon: const Icon(Icons.refresh, size: 18),
+                    label: const Text('Reconnect'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      Navigator.pop(context);
+                      await _disconnectSession(session.id);
+                    },
+                    icon: const Icon(Icons.logout, size: 18,
+                        color: Colors.redAccent),
+                    label: const Text('Disconnect',
+                        style: TextStyle(color: Colors.redAccent)),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _disconnectSession(String sessionId) async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Disconnect',
+      message: 'Are you sure you want to disconnect this session?',
+      confirmLabel: 'Disconnect',
+      destructive: true,
+    );
+    if (!confirmed) return;
+
+    await ref.read(connectionManagerProvider).closeSession(sessionId);
+    final remaining = ref.read(sessionsProvider).valueOrNull ?? [];
+    if (remaining.isEmpty) {
+      ref.read(activeSessionIdProvider.notifier).state = null;
+    } else {
+      ref.read(activeSessionIdProvider.notifier).state = remaining.first.id;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final controller = ref.watch(terminalControllerProvider);
-    final connectionState = ref.watch(connectionStateProvider);
+    final sessions = ref.watch(sessionsProvider).valueOrNull ?? [];
+    final activeId = ref.watch(activeSessionIdProvider);
+    final prefs = ref.watch(preferencesProvider);
+
+    // Find the active session
+    Session? activeSession;
+    for (final s in sessions) {
+      if (s.id == activeId) {
+        activeSession = s;
+        break;
+      }
+    }
+
+    final controller = activeId != null
+        ? ref.watch(sessionTerminalControllerProvider(activeId))
+        : null;
 
     return Scaffold(
       key: _scaffoldKey,
-      endDrawer: const Drawer(
-        width: 320,
-        child: FilePanel(),
-      ),
+      endDrawer: activeId != null
+          ? Drawer(
+              width: 320,
+              child: FilePanel(sessionId: activeId),
+            )
+          : null,
       body: SafeArea(
         child: Column(
           children: [
-            _ConnectionPill(
-              state: connectionState.valueOrNull ??
-                  SshConnectionState.disconnected,
-              onDisconnect: () {
-                ref.read(sshServiceProvider).disconnect();
-              },
-              onFilePanel: () {
-                _scaffoldKey.currentState?.openEndDrawer();
+            SessionTabBar(
+              onNewSession: () {
+                ref.read(activeSessionIdProvider.notifier).state = null;
               },
             ),
-            Expanded(
-              child: TerminalView(
-                controller.terminal,
-                theme: AppTerminalThemes.dark,
-                textStyle: const TerminalStyle(
-                  fontSize: 14,
-                  fontFamily: 'JetBrainsMono',
+            if (activeSession != null)
+              _ConnectionPill(
+                state: activeSession.state,
+                profile: activeSession.profile,
+                onDisconnect: () => _disconnectSession(activeSession!.id),
+                onFilePanel: () {
+                  _scaffoldKey.currentState?.openEndDrawer();
+                },
+                onSettings: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                      builder: (_) => const SettingsScreen()),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 4),
+                onConnectionInfo: () =>
+                    _showConnectionInfo(activeSession!),
               ),
+            Expanded(
+              child: controller != null
+                  ? TerminalView(
+                      controller.terminal,
+                      theme: AppTerminalThemes.dark,
+                      textStyle: TerminalStyle(
+                        fontSize: prefs.fontSize,
+                        fontFamily: 'JetBrainsMono',
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                    )
+                  : const Center(child: Text('No active session')),
             ),
-            SmartToolbar(
-              controller: controller,
-              onAttachFile: _attachFile,
-              onCommandPalette: _showCommandPalette,
-            ),
+            if (controller != null)
+              SmartToolbar(
+                controller: controller,
+                onAttachFile: _attachFile,
+                onCommandPalette: _showCommandPalette,
+              ),
           ],
         ),
       ),
@@ -125,35 +237,69 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
   }
 }
 
+class _InfoRow extends StatelessWidget {
+  final String label;
+  final String value;
+  const _InfoRow(this.label, this.value);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(label,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.6),
+                    )),
+          ),
+          Expanded(
+            child: Text(value,
+                style: const TextStyle(
+                    fontFamily: 'JetBrainsMono', fontSize: 13)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ConnectionPill extends StatelessWidget {
   final SshConnectionState state;
+  final ServerProfile profile;
   final VoidCallback onDisconnect;
   final VoidCallback onFilePanel;
+  final VoidCallback onSettings;
+  final VoidCallback onConnectionInfo;
 
   const _ConnectionPill({
     required this.state,
+    required this.profile,
     required this.onDisconnect,
     required this.onFilePanel,
+    required this.onSettings,
+    required this.onConnectionInfo,
   });
 
   Color get _color => switch (state) {
         SshConnectionState.connected => Colors.green,
-        SshConnectionState.reconnecting => Colors.amber,
-        SshConnectionState.connecting => Colors.amber,
+        SshConnectionState.reconnecting ||
+        SshConnectionState.connecting ||
+        SshConnectionState.authenticating ||
+        SshConnectionState.startingShell =>
+          Colors.amber,
         _ => Colors.redAccent,
-      };
-
-  String get _label => switch (state) {
-        SshConnectionState.connected => 'Connected',
-        SshConnectionState.reconnecting => 'Reconnecting...',
-        SshConnectionState.connecting => 'Connecting...',
-        SshConnectionState.error => 'Error',
-        SshConnectionState.disconnected => 'Disconnected',
       };
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
       height: 36,
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Row(
@@ -167,7 +313,7 @@ class _ConnectionPill extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          Text(_label, style: Theme.of(context).textTheme.bodySmall),
+          Text(state.label, style: Theme.of(context).textTheme.bodySmall),
           const Spacer(),
           IconButton(
             icon: const Icon(Icons.folder_outlined, size: 20),
@@ -175,12 +321,52 @@ class _ConnectionPill extends StatelessWidget {
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
           ),
-          const SizedBox(width: 12),
-          IconButton(
-            icon: const Icon(Icons.logout, size: 20),
-            onPressed: onDisconnect,
+          const SizedBox(width: 8),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert, size: 20),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
+            onSelected: (value) {
+              switch (value) {
+                case 'info':
+                  onConnectionInfo();
+                case 'settings':
+                  onSettings();
+                case 'disconnect':
+                  onDisconnect();
+              }
+            },
+            itemBuilder: (_) => [
+              const PopupMenuItem(
+                value: 'info',
+                child: ListTile(
+                  dense: true,
+                  leading: Icon(Icons.info_outline, size: 20),
+                  title: Text('Connection Info'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'settings',
+                child: ListTile(
+                  dense: true,
+                  leading: Icon(Icons.settings_outlined, size: 20),
+                  title: Text('Settings'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'disconnect',
+                child: ListTile(
+                  dense: true,
+                  leading: Icon(Icons.logout, size: 20,
+                      color: Colors.redAccent),
+                  title: Text('Disconnect',
+                      style: TextStyle(color: Colors.redAccent)),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            ],
           ),
         ],
       ),

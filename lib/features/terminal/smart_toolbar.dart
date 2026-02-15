@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xterm/xterm.dart';
+import '../settings/preferences_provider.dart';
 import 'terminal_controller.dart';
 
-class SmartToolbar extends StatefulWidget {
+class SmartToolbar extends ConsumerStatefulWidget {
   final SshTerminalController controller;
   final VoidCallback onAttachFile;
   final VoidCallback onCommandPalette;
@@ -16,19 +18,23 @@ class SmartToolbar extends StatefulWidget {
   });
 
   @override
-  State<SmartToolbar> createState() => _SmartToolbarState();
+  ConsumerState<SmartToolbar> createState() => _SmartToolbarState();
 }
 
-class _SmartToolbarState extends State<SmartToolbar> {
+class _SmartToolbarState extends ConsumerState<SmartToolbar> {
   bool _ctrlActive = false;
 
   void _onKey(TerminalKey key) {
-    HapticFeedback.lightImpact();
+    if (ref.read(preferencesProvider).haptics) {
+      HapticFeedback.lightImpact();
+    }
     widget.controller.sendKey(key);
   }
 
   void _toggleCtrl() {
-    HapticFeedback.mediumImpact();
+    if (ref.read(preferencesProvider).haptics) {
+      HapticFeedback.mediumImpact();
+    }
     setState(() => _ctrlActive = !_ctrlActive);
   }
 

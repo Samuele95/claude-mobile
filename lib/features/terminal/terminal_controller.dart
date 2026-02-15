@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:xterm/xterm.dart';
 import '../../core/ssh/ssh_service.dart';
@@ -5,6 +7,8 @@ import '../../core/ssh/ssh_service.dart';
 class SshTerminalController {
   final Terminal terminal;
   final SshService _ssh;
+  final Utf8Decoder _utf8Decoder = const Utf8Decoder(allowMalformed: true);
+  StreamSubscription<Uint8List>? _outputSub;
 
   SshTerminalController({required SshService ssh})
       : _ssh = ssh,
@@ -17,8 +21,8 @@ class SshTerminalController {
       _ssh.resizePty(width, height);
     };
 
-    _ssh.outputStream.listen((data) {
-      terminal.write(String.fromCharCodes(data));
+    _outputSub = _ssh.outputStream.listen((data) {
+      terminal.write(_utf8Decoder.convert(data));
     });
   }
 
@@ -52,5 +56,7 @@ class SshTerminalController {
     _ssh.write(text);
   }
 
-  void dispose() {}
+  void dispose() {
+    _outputSub?.cancel();
+  }
 }

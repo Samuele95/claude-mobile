@@ -14,6 +14,8 @@ class SshService {
   SshConnectionState _state = SshConnectionState.disconnected;
   ServerProfile? _activeProfile;
   String? _password;
+  int _lastWidth = 80;
+  int _lastHeight = 24;
 
   final _stateController = StreamController<SshConnectionState>.broadcast();
   final _outputController = StreamController<Uint8List>.broadcast();
@@ -31,21 +33,30 @@ class SshService {
     _stateController.add(newState);
   }
 
-  Future<void> connect(ServerProfile profile, {String? password}) async {
+  Future<void> connect(
+    ServerProfile profile, {
+    String? password,
+    int initialWidth = 80,
+    int initialHeight = 24,
+  }) async {
     if (_state.isActive) await disconnect();
 
     _activeProfile = profile;
     _password = password;
+    _lastWidth = initialWidth;
+    _lastHeight = initialHeight;
     _setState(SshConnectionState.connecting);
 
     try {
+      _setState(SshConnectionState.authenticating);
       _client = await _createClient(profile, password: password);
 
+      _setState(SshConnectionState.startingShell);
       _shell = await _client!.shell(
         pty: SSHPtyConfig(
           type: 'xterm-256color',
-          width: 80,
-          height: 24,
+          width: initialWidth,
+          height: initialHeight,
         ),
       );
 
@@ -103,6 +114,8 @@ class SshService {
   }
 
   void resizePty(int width, int height) {
+    _lastWidth = width;
+    _lastHeight = height;
     _shell?.resizeTerminal(width, height);
   }
 
@@ -126,7 +139,12 @@ class SshService {
     if (_activeProfile == null) return;
     _setState(SshConnectionState.reconnecting);
     try {
-      await connect(_activeProfile!, password: _password);
+      await connect(
+        _activeProfile!,
+        password: _password,
+        initialWidth: _lastWidth,
+        initialHeight: _lastHeight,
+      );
     } catch (_) {
       _setState(SshConnectionState.error);
     }

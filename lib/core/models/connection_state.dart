@@ -1,6 +1,8 @@
 enum SshConnectionState {
   disconnected,
   connecting,
+  authenticating,
+  startingShell,
   connected,
   reconnecting,
   error;
@@ -9,4 +11,14 @@ enum SshConnectionState {
   bool get isActive =>
       this == SshConnectionState.connected ||
       this == SshConnectionState.reconnecting;
+
+  String get label => switch (this) {
+        SshConnectionState.disconnected => 'Disconnected',
+        SshConnectionState.connecting => 'Connecting...',
+        SshConnectionState.authenticating => 'Authenticating...',
+        SshConnectionState.startingShell => 'Starting shell...',
+        SshConnectionState.connected => 'Connected',
+        SshConnectionState.reconnecting => 'Reconnecting...',
+        SshConnectionState.error => 'Error',
+      };
 }

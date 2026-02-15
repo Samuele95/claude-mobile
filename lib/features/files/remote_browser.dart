@@ -2,12 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/providers.dart';
+import '../../core/utils/dialogs.dart';
 import 'file_item_tile.dart';
 
 class RemoteBrowser extends ConsumerStatefulWidget {
+  final String sessionId;
   final void Function(String path) onSendToTerminal;
 
-  const RemoteBrowser({super.key, required this.onSendToTerminal});
+  const RemoteBrowser({
+    super.key,
+    required this.sessionId,
+    required this.onSendToTerminal,
+  });
 
   @override
   ConsumerState<RemoteBrowser> createState() => _RemoteBrowserState();
@@ -32,7 +38,14 @@ class _RemoteBrowserState extends ConsumerState<RemoteBrowser> {
     });
 
     try {
-      final sftp = ref.read(sftpServiceProvider);
+      final sftp = ref.read(sessionSftpProvider(widget.sessionId));
+      if (sftp == null) {
+        setState(() {
+          _error = 'SFTP not available';
+          _loading = false;
+        });
+        return;
+      }
       final items = await sftp.listDirectory(_currentPath);
       setState(() {
         _entries = items
@@ -72,11 +85,11 @@ class _RemoteBrowserState extends ConsumerState<RemoteBrowser> {
     _loadDirectory();
   }
 
-  void _showContextMenu(BuildContext context, _FileEntry entry) {
+  void _showContextMenu(BuildContext parentContext, _FileEntry entry) {
     final fullPath = '$_currentPath/${entry.name}';
     showModalBottomSheet(
-      context: context,
-      builder: (_) => Column(
+      context: parentContext,
+      builder: (sheetContext) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           ListTile(
@@ -84,7 +97,7 @@ class _RemoteBrowserState extends ConsumerState<RemoteBrowser> {
             title: const Text('Copy path'),
             onTap: () {
               Clipboard.setData(ClipboardData(text: fullPath));
-              Navigator.pop(context);
+              Navigator.pop(sheetContext);
             },
           ),
           ListTile(
@@ -92,35 +105,49 @@ class _RemoteBrowserState extends ConsumerState<RemoteBrowser> {
             title: const Text('Send path to Claude'),
             onTap: () {
               widget.onSendToTerminal(fullPath);
-              Navigator.pop(context);
+              Navigator.pop(sheetContext);
             },
           ),
           ListTile(
             leading: const Icon(Icons.delete_outline),
             title: const Text('Delete'),
-            onTap: () async {
-              Navigator.pop(context);
-              final messenger = ScaffoldMessenger.of(context);
-              final sftp = ref.read(sftpServiceProvider);
-              try {
-                if (entry.isDirectory) {
-                  await sftp.rmdir(fullPath);
-                } else {
-                  await sftp.remove(fullPath);
-                }
-                _loadDirectory();
-              } catch (e) {
-                if (mounted) {
-                  messenger.showSnackBar(
-                    SnackBar(content: Text('Delete failed: $e')),
-                  );
-                }
-              }
+            onTap: () {
+              Navigator.pop(sheetContext);
+              _confirmDelete(entry, fullPath);
             },
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _confirmDelete(_FileEntry entry, String fullPath) async {
+    if (!mounted) return;
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Delete ${entry.isDirectory ? 'folder' : 'file'}',
+      message: 'Delete "${entry.name}"? This cannot be undone.',
+      confirmLabel: 'Delete',
+      destructive: true,
+    );
+    if (!confirmed || !mounted) return;
+
+    final sftp = ref.read(sessionSftpProvider(widget.sessionId));
+    if (sftp == null) return;
+    try {
+      if (entry.isDirectory) {
+        await sftp.rmdir(fullPath);
+      } else {
+        await sftp.remove(fullPath);
+      }
+      _loadDirectory();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Delete failed: $e')),
+        );
+      }
+    }
   }
 
   String _formatSize(int bytes) {
@@ -169,23 +196,26 @@ class _RemoteBrowserState extends ConsumerState<RemoteBrowser> {
                   ? Center(
                       child:
                           Text(_error!, style: const TextStyle(fontSize: 12)))
-                  : ListView.builder(
-                      itemCount: _entries.length,
-                      itemBuilder: (context, index) {
-                        final entry = _entries[index];
-                        return FileItemTile(
-                          name: entry.name,
-                          isDirectory: entry.isDirectory,
-                          subtitle: entry.isDirectory
-                              ? null
-                              : _formatSize(entry.size),
-                          onTap: entry.isDirectory
-                              ? () => _navigate(entry.name)
-                              : () {},
-                          onLongPress: () =>
-                              _showContextMenu(context, entry),
-                        );
-                      },
+                  : RefreshIndicator(
+                      onRefresh: _loadDirectory,
+                      child: ListView.builder(
+                        itemCount: _entries.length,
+                        itemBuilder: (context, index) {
+                          final entry = _entries[index];
+                          return FileItemTile(
+                            name: entry.name,
+                            isDirectory: entry.isDirectory,
+                            subtitle: entry.isDirectory
+                                ? null
+                                : _formatSize(entry.size),
+                            onTap: entry.isDirectory
+                                ? () => _navigate(entry.name)
+                                : () {},
+                            onLongPress: () =>
+                                _showContextMenu(context, entry),
+                          );
+                        },
+                      ),
                     ),
         ),
       ],

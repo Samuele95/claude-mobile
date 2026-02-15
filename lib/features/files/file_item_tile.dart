@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class FileItemTile extends StatelessWidget {
   final String name;
@@ -50,7 +51,10 @@ class FileItemTile extends StatelessWidget {
       subtitle: subtitle != null
           ? Text(subtitle!, style: const TextStyle(fontSize: 11))
           : null,
-      onTap: onTap,
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
       onLongPress: onLongPress,
     );
   }

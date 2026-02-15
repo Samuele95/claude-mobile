@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/models/server_profile.dart';
 import '../../core/providers.dart';
+import '../../core/ssh/ssh_service.dart';
+import '../settings/preferences_provider.dart';
 
 class AddServerSheet extends ConsumerStatefulWidget {
   final ServerProfile? existing;
@@ -19,6 +22,7 @@ class _AddServerSheetState extends ConsumerState<AddServerSheet> {
   late final TextEditingController _portCtrl;
   late final TextEditingController _userCtrl;
   late final TextEditingController _passwordCtrl;
+  late final TextEditingController _startupCmdCtrl;
   AuthMethod _authMethod = AuthMethod.password;
   bool _testing = false;
   String? _testResult;
@@ -33,6 +37,10 @@ class _AddServerSheetState extends ConsumerState<AddServerSheet> {
         TextEditingController(text: (widget.existing?.port ?? 22).toString());
     _userCtrl = TextEditingController(text: widget.existing?.username ?? '');
     _passwordCtrl = TextEditingController();
+    _startupCmdCtrl = TextEditingController(
+      text: widget.existing?.startupCommand ??
+          'claude --dangerously-skip-permissions',
+    );
     _authMethod = widget.existing?.authMethod ?? AuthMethod.password;
   }
 
@@ -43,6 +51,7 @@ class _AddServerSheetState extends ConsumerState<AddServerSheet> {
     _portCtrl.dispose();
     _userCtrl.dispose();
     _passwordCtrl.dispose();
+    _startupCmdCtrl.dispose();
     super.dispose();
   }
 
@@ -55,21 +64,27 @@ class _AddServerSheetState extends ConsumerState<AddServerSheet> {
     });
 
     final profile = _buildProfile();
-    final ssh = ref.read(sshServiceProvider);
+    final keyManager = ref.read(keyManagerProvider);
+    // Create a temporary SshService to avoid mutating global state
+    final tempSsh = SshService(keyManager: keyManager);
 
     try {
-      await ssh.connect(profile, password: _passwordCtrl.text);
-      await ssh.disconnect();
+      await tempSsh.connect(profile, password: _passwordCtrl.text);
+      await tempSsh.disconnect();
       setState(() => _testResult = 'success');
     } catch (e) {
       setState(() => _testResult = e.toString());
     } finally {
+      tempSsh.dispose();
       setState(() => _testing = false);
     }
   }
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+
+    final prefs = ref.read(preferencesProvider);
+    if (prefs.haptics) HapticFeedback.lightImpact();
 
     final profile = _buildProfile();
     await ref.read(profilesProvider.notifier).add(profile);
@@ -95,6 +110,7 @@ class _AddServerSheetState extends ConsumerState<AddServerSheet> {
       port: int.tryParse(_portCtrl.text) ?? 22,
       username: _userCtrl.text.trim(),
       authMethod: _authMethod,
+      startupCommand: _startupCmdCtrl.text.trim(),
       createdAt: widget.existing?.createdAt ?? DateTime.now(),
     );
   }
@@ -206,6 +222,16 @@ class _AddServerSheetState extends ConsumerState<AddServerSheet> {
                             .withValues(alpha: 0.6),
                       ),
                 ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _startupCmdCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Startup Command',
+                  hintText: 'claude --dangerously-skip-permissions',
+                ),
+                style: const TextStyle(
+                    fontFamily: 'JetBrainsMono', fontSize: 13),
+              ),
               const SizedBox(height: 20),
               if (_testResult != null)
                 Padding(

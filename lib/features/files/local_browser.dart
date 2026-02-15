@@ -108,22 +108,25 @@ class _LocalBrowserState extends State<LocalBrowser> {
                   ? Center(
                       child:
                           Text(_error!, style: const TextStyle(fontSize: 12)))
-                  : ListView.builder(
-                      itemCount: _entries.length,
-                      itemBuilder: (context, index) {
-                        final entity = _entries[index];
-                        final isDir = entity is Directory;
-                        return FileItemTile(
-                          name: _fileName(entity),
-                          isDirectory: isDir,
-                          subtitle: isDir
-                              ? null
-                              : _formatSize((entity as File).lengthSync()),
-                          onTap: isDir
-                              ? () => _navigate(entity.path)
-                              : () {},
-                        );
-                      },
+                  : RefreshIndicator(
+                      onRefresh: _loadDirectory,
+                      child: ListView.builder(
+                        itemCount: _entries.length,
+                        itemBuilder: (context, index) {
+                          final entity = _entries[index];
+                          final isDir = entity is Directory;
+                          return FileItemTile(
+                            name: _fileName(entity),
+                            isDirectory: isDir,
+                            subtitle: isDir
+                                ? null
+                                : _formatSize((entity as File).lengthSync()),
+                            onTap: isDir
+                                ? () => _navigate(entity.path)
+                                : () {},
+                          );
+                        },
+                      ),
                     ),
         ),
       ],

@@ -1,12 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'models/server_profile.dart';
-import 'models/connection_state.dart';
+import 'models/session.dart';
 import 'models/transfer_item.dart';
 import 'storage/profile_repository.dart';
 import 'storage/key_manager.dart';
 import 'ssh/ssh_service.dart';
 import 'ssh/sftp_service.dart';
+import 'ssh/connection_manager.dart';
+import '../features/terminal/terminal_controller.dart';
 
 // --- Singletons ---
 
@@ -22,19 +24,43 @@ final profileRepositoryProvider = Provider<ProfileRepository>(
   (ref) => ProfileRepository(storage: ref.watch(secureStorageProvider)),
 );
 
-final sshServiceProvider = Provider<SshService>((ref) {
-  final service = SshService(keyManager: ref.watch(keyManagerProvider));
-  ref.onDispose(() => service.dispose());
-  return service;
+// --- Connection Manager (replaces singleton ssh/sftp) ---
+
+final connectionManagerProvider = Provider<ConnectionManager>((ref) {
+  final manager = ConnectionManager(keyManager: ref.watch(keyManagerProvider));
+  ref.onDispose(() => manager.dispose());
+  return manager;
 });
 
-final sftpServiceProvider = Provider<SftpService>((ref) {
-  final service = SftpService();
-  ref.onDispose(() => service.dispose());
-  return service;
+// --- Session State ---
+
+final sessionsProvider = StreamProvider<List<Session>>((ref) {
+  final manager = ref.watch(connectionManagerProvider);
+  return manager.sessionsStream;
 });
 
-// --- Async State ---
+final activeSessionIdProvider = StateProvider<String?>((ref) => null);
+
+// --- Family Providers (per-session) ---
+
+final sessionSshProvider = Provider.family<SshService?, String>((ref, id) {
+  return ref.watch(connectionManagerProvider).getSsh(id);
+});
+
+final sessionSftpProvider = Provider.family<SftpService?, String>((ref, id) {
+  return ref.watch(connectionManagerProvider).getSftp(id);
+});
+
+final sessionTerminalControllerProvider =
+    Provider.family<SshTerminalController?, String>((ref, id) {
+  final ssh = ref.watch(connectionManagerProvider).getSsh(id);
+  if (ssh == null) return null;
+  final controller = SshTerminalController(ssh: ssh);
+  ref.onDispose(() => controller.dispose());
+  return controller;
+});
+
+// --- Profiles ---
 
 final profilesProvider =
     AsyncNotifierProvider<ProfilesNotifier, List<ServerProfile>>(
@@ -57,14 +83,12 @@ class ProfilesNotifier extends AsyncNotifier<List<ServerProfile>> {
   }
 }
 
-// --- Connection State ---
-
-final connectionStateProvider = StreamProvider<SshConnectionState>((ref) {
-  return ref.watch(sshServiceProvider).stateStream;
-});
-
 // --- Transfer State ---
 
-final transferStreamProvider = StreamProvider<TransferItem>((ref) {
-  return ref.watch(sftpServiceProvider).transferStream;
-});
+final transferStreamProvider = StreamProvider.family<TransferItem, String>(
+  (ref, sessionId) {
+    final sftp = ref.watch(connectionManagerProvider).getSftp(sessionId);
+    if (sftp == null) return const Stream.empty();
+    return sftp.transferStream;
+  },
+);

@@ -26,17 +26,13 @@ class AppShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final connectionState = ref.watch(connectionStateProvider);
+    final activeSessionId = ref.watch(activeSessionIdProvider);
 
-    return connectionState.when(
-      data: (state) {
-        if (state.isConnected) {
-          return const TerminalScreen();
-        }
-        return const ConnectionScreen();
-      },
-      loading: () => const ConnectionScreen(),
-      error: (_, _) => const ConnectionScreen(),
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 200),
+      child: activeSessionId != null
+          ? const TerminalScreen(key: ValueKey('terminal'))
+          : const ConnectionScreen(key: ValueKey('connection')),
     );
   }
 }
