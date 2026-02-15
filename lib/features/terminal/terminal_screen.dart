@@ -11,9 +11,9 @@ import 'terminal_controller.dart';
 import 'smart_toolbar.dart';
 import 'command_palette.dart';
 
-final terminalControllerProvider = Provider<TerminalController>((ref) {
+final terminalControllerProvider = Provider<SshTerminalController>((ref) {
   final ssh = ref.watch(sshServiceProvider);
-  final controller = TerminalController(ssh: ssh);
+  final controller = SshTerminalController(ssh: ssh);
   ref.onDispose(() => controller.dispose());
   return controller;
 });
@@ -105,7 +105,7 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
             Expanded(
               child: TerminalView(
                 controller.terminal,
-                theme: TerminalThemes.dark,
+                theme: AppTerminalThemes.dark,
                 textStyle: const TerminalStyle(
                   fontSize: 14,
                   fontFamily: 'JetBrainsMono',

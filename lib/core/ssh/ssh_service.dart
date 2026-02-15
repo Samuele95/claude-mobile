@@ -78,7 +78,7 @@ class SshService {
   }
 
   void write(String data) {
-    _shell?.write(utf8.encode(data) as Uint8List);
+    _shell?.write(Uint8List.fromList(utf8.encode(data)));
   }
 
   void writeBytes(Uint8List data) {

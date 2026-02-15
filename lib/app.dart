@@ -4,7 +4,6 @@ import 'features/connection/connection_screen.dart';
 import 'features/terminal/terminal_screen.dart';
 import 'features/settings/preferences_provider.dart';
 import 'core/providers.dart';
-import 'core/models/connection_state.dart';
 
 class ClaudeMobileApp extends ConsumerWidget {
   const ClaudeMobileApp({super.key});

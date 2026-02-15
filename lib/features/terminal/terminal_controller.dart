@@ -2,11 +2,11 @@ import 'dart:typed_data';
 import 'package:xterm/xterm.dart';
 import '../../core/ssh/ssh_service.dart';
 
-class TerminalController {
+class SshTerminalController {
   final Terminal terminal;
   final SshService _ssh;
 
-  TerminalController({required SshService ssh})
+  SshTerminalController({required SshService ssh})
       : _ssh = ssh,
         terminal = Terminal(maxLines: 10000) {
     terminal.onOutput = (data) {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:xterm/xterm.dart';
 
-class TerminalThemes {
+class AppTerminalThemes {
   static final dark = TerminalTheme(
     cursor: const Color(0xFFA6ADC8),
     selection: const Color(0x407C3AED),

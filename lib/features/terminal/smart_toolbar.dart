@@ -4,7 +4,7 @@ import 'package:xterm/xterm.dart';
 import 'terminal_controller.dart';
 
 class SmartToolbar extends StatefulWidget {
-  final TerminalController controller;
+  final SshTerminalController controller;
   final VoidCallback onAttachFile;
   final VoidCallback onCommandPalette;
 
