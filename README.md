@@ -13,8 +13,6 @@
 <p align="center">
   <a href="https://github.com/Samuele95/claude-mobile/releases"><img src="https://img.shields.io/github/v/release/Samuele95/claude-mobile?style=for-the-badge&color=7C3AED&label=Download" alt="Download" /></a>
   &nbsp;
-  <a href="https://github.com/Samuele95/claude-mobile/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/Samuele95/claude-mobile/ci.yml?branch=master&style=for-the-badge&color=A6E3A1&label=CI" alt="CI" /></a>
-  &nbsp;
   <a href="LICENSE"><img src="https://img.shields.io/github/license/Samuele95/claude-mobile?style=for-the-badge&color=89B4FA" alt="MIT License" /></a>
   &nbsp;
   <a href="https://github.com/Samuele95/claude-mobile/stargazers"><img src="https://img.shields.io/github/stars/Samuele95/claude-mobile?style=for-the-badge&color=F9E2AF" alt="Stars" /></a>
