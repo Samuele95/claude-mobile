@@ -100,6 +100,7 @@ class _RemoteBrowserState extends ConsumerState<RemoteBrowser> {
             title: const Text('Delete'),
             onTap: () async {
               Navigator.pop(context);
+              final messenger = ScaffoldMessenger.of(context);
               final sftp = ref.read(sftpServiceProvider);
               try {
                 if (entry.isDirectory) {
@@ -110,7 +111,7 @@ class _RemoteBrowserState extends ConsumerState<RemoteBrowser> {
                 _loadDirectory();
               } catch (e) {
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  messenger.showSnackBar(
                     SnackBar(content: Text('Delete failed: $e')),
                   );
                 }

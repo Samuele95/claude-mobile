@@ -36,7 +36,7 @@ class AppShell extends ConsumerWidget {
         return const ConnectionScreen();
       },
       loading: () => const ConnectionScreen(),
-      error: (_, __) => const ConnectionScreen(),
+      error: (_, _) => const ConnectionScreen(),
     );
   }
 }

@@ -1,11 +1,14 @@
 import 'dart:convert';
 
+enum AuthMethod { key, password }
+
 class ServerProfile {
   final String id;
   final String name;
   final String host;
   final int port;
   final String username;
+  final AuthMethod authMethod;
   final DateTime createdAt;
 
   const ServerProfile({
@@ -14,6 +17,7 @@ class ServerProfile {
     required this.host,
     this.port = 22,
     required this.username,
+    this.authMethod = AuthMethod.password,
     required this.createdAt,
   });
 
@@ -22,6 +26,7 @@ class ServerProfile {
     String? host,
     int? port,
     String? username,
+    AuthMethod? authMethod,
   }) {
     return ServerProfile(
       id: id,
@@ -29,6 +34,7 @@ class ServerProfile {
       host: host ?? this.host,
       port: port ?? this.port,
       username: username ?? this.username,
+      authMethod: authMethod ?? this.authMethod,
       createdAt: createdAt,
     );
   }
@@ -39,6 +45,7 @@ class ServerProfile {
         'host': host,
         'port': port,
         'username': username,
+        'authMethod': authMethod.name,
         'createdAt': createdAt.toIso8601String(),
       };
 
@@ -48,6 +55,10 @@ class ServerProfile {
         host: json['host'] as String,
         port: json['port'] as int? ?? 22,
         username: json['username'] as String,
+        authMethod: AuthMethod.values.firstWhere(
+          (e) => e.name == (json['authMethod'] as String?),
+          orElse: () => AuthMethod.password,
+        ),
         createdAt: DateTime.parse(json['createdAt'] as String),
       );
 

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@drawable/widget_background">
+
+    <TextView
+        android:id="@+id/widget_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Claude"
+        android:textColor="#CDD6F4"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/widget_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Ready"
+        android:textColor="#A6ADC8"
+        android:textSize="12sp"
+        android:layout_marginTop="4dp" />
+
+    <EditText
+        android:id="@+id/widget_input"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:hint="Ask Claude..."
+        android:textColorHint="#585B70"
+        android:textColor="#CDD6F4"
+        android:background="@drawable/widget_input_background"
+        android:padding="12dp"
+        android:textSize="14sp"
+        android:singleLine="true"
+        android:imeOptions="actionSend"
+        android:inputType="text" />
+
+</LinearLayout>

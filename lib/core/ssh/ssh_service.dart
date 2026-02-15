@@ -13,6 +13,7 @@ class SshService {
   SSHSession? _shell;
   SshConnectionState _state = SshConnectionState.disconnected;
   ServerProfile? _activeProfile;
+  String? _password;
 
   final _stateController = StreamController<SshConnectionState>.broadcast();
   final _outputController = StreamController<Uint8List>.broadcast();
@@ -30,27 +31,15 @@ class SshService {
     _stateController.add(newState);
   }
 
-  Future<void> connect(ServerProfile profile) async {
+  Future<void> connect(ServerProfile profile, {String? password}) async {
     if (_state.isActive) await disconnect();
 
     _activeProfile = profile;
+    _password = password;
     _setState(SshConnectionState.connecting);
 
     try {
-      final keyPairs = await _keyManager.getProfileKeyPairs(profile.id);
-
-      final socket = await SSHSocket.connect(
-        profile.host,
-        profile.port,
-        timeout: const Duration(seconds: 10),
-      );
-
-      _client = SSHClient(
-        socket,
-        username: profile.username,
-        identities: keyPairs,
-        keepAliveInterval: const Duration(seconds: 30),
-      );
+      _client = await _createClient(profile, password: password);
 
       _shell = await _client!.shell(
         pty: SSHPtyConfig(
@@ -77,6 +66,34 @@ class SshService {
     }
   }
 
+  Future<SSHClient> _createClient(
+    ServerProfile profile, {
+    String? password,
+  }) async {
+    final socket = await SSHSocket.connect(
+      profile.host,
+      profile.port,
+      timeout: const Duration(seconds: 10),
+    );
+
+    if (profile.authMethod == AuthMethod.password && password != null) {
+      return SSHClient(
+        socket,
+        username: profile.username,
+        onPasswordRequest: () => password,
+        keepAliveInterval: const Duration(seconds: 30),
+      );
+    }
+
+    final keyPairs = await _keyManager.getProfileKeyPairs(profile.id);
+    return SSHClient(
+      socket,
+      username: profile.username,
+      identities: keyPairs,
+      keepAliveInterval: const Duration(seconds: 30),
+    );
+  }
+
   void write(String data) {
     _shell?.write(Uint8List.fromList(utf8.encode(data)));
   }
@@ -90,19 +107,12 @@ class SshService {
   }
 
   /// Execute a one-shot command (used by quick-prompt widget).
-  Future<String> executeCommand(ServerProfile profile, String command) async {
-    final keyPairs = await _keyManager.getProfileKeyPairs(profile.id);
-    final socket = await SSHSocket.connect(
-      profile.host,
-      profile.port,
-      timeout: const Duration(seconds: 10),
-    );
-
-    final client = SSHClient(
-      socket,
-      username: profile.username,
-      identities: keyPairs,
-    );
+  Future<String> executeCommand(
+    ServerProfile profile,
+    String command, {
+    String? password,
+  }) async {
+    final client = await _createClient(profile, password: password);
 
     try {
       final result = await client.run(command);
@@ -116,7 +126,7 @@ class SshService {
     if (_activeProfile == null) return;
     _setState(SshConnectionState.reconnecting);
     try {
-      await connect(_activeProfile!);
+      await connect(_activeProfile!, password: _password);
     } catch (_) {
       _setState(SshConnectionState.error);
     }

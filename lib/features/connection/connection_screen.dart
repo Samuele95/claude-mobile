@@ -2,18 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/models/server_profile.dart';
 import '../../core/providers.dart';
+import '../settings/settings_screen.dart';
 import 'add_server_sheet.dart';
 import 'key_display.dart';
 
 class ConnectionScreen extends ConsumerWidget {
   const ConnectionScreen({super.key});
 
-  void _connect(WidgetRef ref, ServerProfile profile) async {
+  Future<void> _connect(WidgetRef ref, ServerProfile profile) async {
     final ssh = ref.read(sshServiceProvider);
     final sftp = ref.read(sftpServiceProvider);
+    final storage = ref.read(secureStorageProvider);
 
     try {
-      await ssh.connect(profile);
+      String? password;
+      if (profile.authMethod == AuthMethod.password) {
+        password = await storage.read(key: 'password_${profile.id}');
+      }
+
+      await ssh.connect(profile, password: password);
       ssh.write('claude --dangerously-skip-permissions\n');
       if (ssh.client != null) {
         await sftp.initialize(ssh.client!);
@@ -32,7 +39,18 @@ class ConnectionScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 40),
+              const SizedBox(height: 16),
+              Align(
+                alignment: Alignment.centerRight,
+                child: IconButton(
+                  icon: const Icon(Icons.settings_outlined),
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                        builder: (_) => const SettingsScreen()),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
               Text(
                 'Claude Mobile',
                 style: Theme.of(context).textTheme.headlineLarge,
