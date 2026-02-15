@@ -1,173 +1,229 @@
 <p align="center">
-  <img src="https://img.shields.io/github/license/Samuele95/claude-mobile?style=flat-square" alt="License" />
-  <img src="https://img.shields.io/github/v/release/Samuele95/claude-mobile?style=flat-square" alt="Release" />
-  <img src="https://img.shields.io/github/actions/workflow/status/Samuele95/claude-mobile/ci.yml?branch=master&style=flat-square&label=CI" alt="CI" />
-  <img src="https://img.shields.io/github/stars/Samuele95/claude-mobile?style=flat-square" alt="Stars" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/banner.svg">
+    <source media="(prefers-color-scheme: light)" srcset=".github/banner.svg">
+    <img alt="Claude Carry" src=".github/banner.svg" width="100%">
+  </picture>
 </p>
 
-# Claude Mobile
+<p align="center">
+  <strong>Your AI dev environment, in your pocket.</strong>
+</p>
 
-An open-source Android terminal client for running [Claude Code](https://docs.anthropic.com/en/docs/claude-code) remotely over SSH. Connect to your development server from your phone with a full terminal emulator, touch-optimized toolbar, file management, and a home screen widget for quick prompts.
+<p align="center">
+  <a href="https://github.com/Samuele95/claude-mobile/releases"><img src="https://img.shields.io/github/v/release/Samuele95/claude-mobile?style=for-the-badge&color=7C3AED&label=Download" alt="Download" /></a>
+  &nbsp;
+  <a href="https://github.com/Samuele95/claude-mobile/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/Samuele95/claude-mobile/ci.yml?branch=master&style=for-the-badge&color=A6E3A1&label=CI" alt="CI" /></a>
+  &nbsp;
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/Samuele95/claude-mobile?style=for-the-badge&color=89B4FA" alt="MIT License" /></a>
+  &nbsp;
+  <a href="https://github.com/Samuele95/claude-mobile/stargazers"><img src="https://img.shields.io/github/stars/Samuele95/claude-mobile?style=for-the-badge&color=F9E2AF" alt="Stars" /></a>
+</p>
 
-> **Run Claude Code from anywhere** — on the bus, on the couch, or away from your desk.
+<p align="center">
+  <a href="#-quick-start">Quick Start</a> · <a href="#-demo">Demo</a> · <a href="#-features">Features</a> · <a href="#-build-from-source">Build</a> · <a href="#-contributing">Contributing</a>
+</p>
 
 ---
 
-## Install
+Claude Carry turns your Android phone into a remote Claude Code terminal. SSH into your dev server from anywhere — the couch, the bus, the coffee shop — and let Claude refactor your codebase, write tests, or debug that production issue while you're away from your desk.
 
-**Download the latest APK** from the [Releases page](https://github.com/Samuele95/claude-mobile/releases) and sideload it on your Android device.
+No browser. No VPN portal. Just open the app, tap a server, and you're in.
 
-```bash
-# Or install via ADB
-adb install claude-mobile-v*.apk
+---
+
+## 🎬 Demo
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/demo.svg">
+    <source media="(prefers-color-scheme: light)" srcset=".github/demo.svg">
+    <img alt="Claude Carry Demo — Server List, Terminal, and File Manager" src=".github/demo.svg" width="100%">
+  </picture>
+</p>
+
+<p align="center"><em>Three screens. That's all it takes. Pick a server, talk to Claude, manage files.</em></p>
+
+---
+
+## ⚡ Quick Start
+
+**1.** Grab the APK from [**Releases**](https://github.com/Samuele95/claude-mobile/releases) and install it
+
+**2.** Add your server (hostname, port, username, auth method)
+
+**3.** Tap to connect — Claude launches automatically
+
+```
+You: "refactor the auth module to use JWT instead of sessions"
+
+Claude: ✓ Updated lib/auth/service.dart
+        ✓ Updated lib/auth/middleware.dart
+        ✓ Created lib/auth/jwt_provider.dart
+        Done. 3 files changed in 12.4s
 ```
 
-Requires Android 8.0+ (API 26).
+That's it. You just shipped code from your phone.
 
 ---
 
-## Features
+## 🧰 Features
 
-### Terminal Emulator
-- Full xterm-compatible terminal via the `xterm` package
-- **Smart toolbar** — arrow keys, Tab, Esc, Ctrl modifier, clipboard paste, command palette, file attach
-- **Command palette** with common Claude Code commands (`/compact`, `/clear`, `/review`, `/cost`, etc.)
-- **Claude Mode selector** — Standard Shell, Skip Permissions, or Custom Prompt
-- Catppuccin color schemes (Mocha dark, AMOLED black, Latte light)
-- JetBrainsMono font with configurable size (8–24pt)
+### Terminal That Doesn't Compromise
 
-### Multi-Session Support
-- Multiple concurrent SSH sessions with a tab bar
-- Per-session terminal state and SFTP connections
-- Session reconnect and connection info panel
+Full `xterm`-compatible terminal with a toolbar built for thumbs, not mice.
 
-### File Management
-- Dual-pane browser — local phone storage + remote server via SFTP
-- Upload, download, create directories, rename, delete
-- Attach files directly to the terminal session
+| | |
+|---|---|
+| 🎹 **Smart Toolbar** | Arrow keys, Tab, Esc, Ctrl modifier — everything you need, nothing you don't |
+| 📋 **Clipboard Paste** | One-tap paste from your clipboard straight into the terminal |
+| ⚡ **Command Palette** | Quick-access Claude commands: `/compact`, `/clear`, `/review`, `/cost` |
+| 🎨 **Catppuccin Themes** | Mocha (dark), AMOLED black, and Latte (light) — terminal colors follow your app theme |
+| 🔤 **JetBrains Mono** | The best monospace font, configurable from 8pt to 24pt |
 
-### Connection Management
-- **SSH key** authentication (Ed25519, auto-generated)
-- **Password** authentication with secure storage
-- Multiple server profiles — add, edit, delete
-- Auto-reconnect with exponential backoff (1s → 16s, up to 5 attempts)
+### Multi-Session, Multi-Server
 
-### Home Screen Widget
-- Quick-prompt widget for one-shot Claude queries
-- Type a prompt, get a response — no need to open the app
+Work across projects without disconnecting.
 
-### Quality of Life
-- Wake lock keeps screen on during sessions
-- Haptic feedback on toolbar actions (toggleable)
-- Task completion notifications when Claude goes idle
-- Theme-aware terminal colors follow your app theme choice
+| | |
+|---|---|
+| 📑 **Session Tabs** | Multiple concurrent SSH sessions with a swipeable tab bar |
+| 🔄 **Auto-Reconnect** | Drops happen. Claude Carry reconnects with exponential backoff (1s → 16s) |
+| 💤 **Wake Lock** | Screen stays on while you're in a session — no accidental disconnects |
+| ⚙️ **Claude Modes** | Standard Shell, Skip Permissions, or Custom Prompt per server |
+
+### File Management Built In
+
+No need to `scp` from a separate app.
+
+| | |
+|---|---|
+| 📂 **Dual-Pane Browser** | Your phone's files on the left, the server on the right |
+| ⬆️ **Upload & Download** | Transfer files between devices with progress tracking |
+| 📎 **Attach to Terminal** | Upload a file and paste its remote path in one tap |
+| 🗂️ **Full CRUD** | Create directories, rename, delete — all from your phone |
+
+### Connection That Just Works
+
+| | |
+|---|---|
+| 🔑 **SSH Key Auth** | Ed25519 keys, auto-generated and stored in the Android Keystore |
+| 🔒 **Password Auth** | Encrypted on-device via `flutter_secure_storage` |
+| 📝 **Server Profiles** | Save, edit, and manage multiple servers |
+| 🏠 **Home Widget** | Quick-prompt widget — fire off a Claude query without even opening the app |
 
 ---
 
-## Screenshots
+## 🏗️ Architecture
 
-> Coming soon — contributions welcome! Add screenshots to `assets/screenshots/` and open a PR.
+Three layers. No magic.
 
----
+```
+┌─────────────────────────────────────────────────────────┐
+│  UI Layer                  Flutter widgets + Riverpod    │
+│  ┌─────────┐ ┌──────────┐ ┌────────┐ ┌───────────────┐ │
+│  │Terminal │ │Connection│ │ Files  │ │   Settings    │ │
+│  │ Screen  │ │  Screen  │ │ Panel  │ │   Screen      │ │
+│  └────┬────┘ └────┬─────┘ └───┬────┘ └───────────────┘ │
+├───────┼──────────┼─────────────┼────────────────────────┤
+│  Service Layer               Providers + Business Logic  │
+│  ┌────┴────┐ ┌───┴────┐ ┌────┴─────┐ ┌──────────────┐  │
+│  │  SSH    │ │ Connec-│ │  SFTP    │ │   Profile     │  │
+│  │ Service │ │ Manager│ │ Service  │ │   Repository  │  │
+│  └────┬────┘ └────┬───┘ └────┬─────┘ └──────────────┘  │
+├───────┼───────────┼──────────┼──────────────────────────┤
+│  Transport Layer                        dartssh2         │
+│           SSH + SFTP over TCP                            │
+└─────────────────────────────────────────────────────────┘
+```
 
-## Architecture
+**State management:** Riverpod — `AsyncNotifier` for profiles, `StreamProvider` for connection state and transfers.
+
+<details>
+<summary><strong>📁 Project structure</strong></summary>
 
 ```
 lib/
-├── main.dart                     # Entry point, edge-to-edge UI
-├── app.dart                      # Root widget, connection-based routing
+├── main.dart                        # Entry point, edge-to-edge
+├── app.dart                         # Root widget, routing
 ├── core/
-│   ├── models/                   # ServerProfile, ConnectionState, Session, TransferItem
-│   ├── providers.dart            # Riverpod providers
+│   ├── models/                      # ServerProfile, Session, TransferItem
+│   ├── providers.dart               # Riverpod wiring
 │   ├── ssh/
-│   │   ├── ssh_service.dart      # SSH connection, PTY, auto-reconnect
-│   │   ├── connection_manager.dart # Multi-session orchestration
-│   │   └── sftp_service.dart     # SFTP file ops with progress tracking
+│   │   ├── ssh_service.dart         # PTY, auto-reconnect, keepalive
+│   │   ├── connection_manager.dart  # Multi-session orchestration
+│   │   └── sftp_service.dart        # Uploads, downloads, progress
 │   └── storage/
-│       ├── key_manager.dart      # Ed25519 key generation & storage
-│       └── profile_repository.dart # Profile CRUD (FlutterSecureStorage)
+│       ├── key_manager.dart         # Ed25519 generation & Keystore
+│       └── profile_repository.dart  # Encrypted profile CRUD
 ├── features/
-│   ├── connection/               # Server list, add/edit sheet, public key display
-│   ├── terminal/                 # Terminal screen, smart toolbar, command palette
-│   ├── files/                    # Dual-pane file browser (local + remote)
-│   ├── settings/                 # Preferences (theme, font, wake lock, auto-reconnect)
-│   └── widget/                   # Home screen quick-prompt service
+│   ├── connection/                  # Server list, add/edit, key display
+│   ├── terminal/                    # Terminal, toolbar, command palette
+│   ├── files/                       # Dual-pane local + remote browser
+│   ├── settings/                    # Preferences (theme, font, toggles)
+│   └── widget/                      # Home screen quick-prompt
 └── theme/
-    ├── app_theme.dart            # Material 3 theme definitions
-    └── terminal_theme.dart       # Catppuccin terminal palettes (dark, amoled, light)
+    ├── app_theme.dart               # Material 3 definitions
+    └── terminal_theme.dart          # Catppuccin dark, amoled, light
 ```
 
-**Design:** SSH transport (`dartssh2`) → Services (`SshService`, `SftpService`, `ConnectionManager`) → UI (Riverpod + Flutter widgets)
-
-**State management:** Riverpod with `AsyncNotifier` for profiles, `StreamProvider` for connection state and transfer progress.
+</details>
 
 ---
 
-## Build from Source
-
-### Prerequisites
-
-- Flutter 3.41+ / Dart 3.11+
-- Android SDK — Build-Tools 35, NDK 28.2, CMake 3.22
-- Java 21 (OpenJDK / Temurin)
-
-### Commands
+## 🔨 Build from Source
 
 ```bash
 git clone https://github.com/Samuele95/claude-mobile.git
 cd claude-mobile
 flutter pub get
-
-# Debug build
-flutter build apk --debug
-
-# Release build
-flutter build apk --release
-
-# Run analysis
-flutter analyze
+flutter build apk --debug     # or --release
 ```
 
-The APK will be at `build/app/outputs/flutter-apk/`.
+**Requirements:** Flutter 3.41+ · Dart 3.11+ · Java 21 · Android SDK 35
 
 ---
 
-## Usage
+## 🤝 Contributing
 
-1. Open the app and tap **Add Server**
-2. Enter your server's hostname/IP, port, and username
-3. Choose an authentication method:
-   - **SSH Key** — tap the key icon to copy your public key, then add it to `~/.ssh/authorized_keys` on your server
-   - **Password** — enter your password (stored encrypted on-device)
-4. Select a **Claude Mode** (Standard Shell, Skip Permissions, or Custom Prompt)
-5. Tap **Test** to verify the connection, then **Save**
-6. Tap the server card to connect — Claude Code launches automatically
+We'd love your help. Whether it's a bug fix, new feature, screenshots, or just better docs — every contribution matters.
+
+1. Read the [**Contributing Guide**](CONTRIBUTING.md)
+2. Check the [**open issues**](https://github.com/Samuele95/claude-mobile/issues)
+3. Fork, branch, code, PR
+
+<details>
+<summary><strong>Ideas for contributions</strong></summary>
+
+- 📸 **Screenshots & screen recordings** for the README
+- 🧪 **Unit and widget tests** — coverage is low
+- 🌍 **Internationalization** — translations welcome
+- ♿ **Accessibility** — screen reader support, contrast
+- 🍎 **iOS port** — the architecture is platform-agnostic
+
+</details>
 
 ---
 
-## Dependencies
+## 📦 Dependencies
 
-| Package | Purpose |
+| Package | What it does |
 |---|---|
 | [`dartssh2`](https://pub.dev/packages/dartssh2) | SSH/SFTP client |
-| [`xterm`](https://pub.dev/packages/xterm) | Terminal emulator widget |
-| [`pinenacl`](https://pub.dev/packages/pinenacl) | Ed25519 key generation |
+| [`xterm`](https://pub.dev/packages/xterm) | Terminal emulator |
 | [`flutter_riverpod`](https://pub.dev/packages/flutter_riverpod) | State management |
-| [`flutter_secure_storage`](https://pub.dev/packages/flutter_secure_storage) | Encrypted credential storage |
+| [`flutter_secure_storage`](https://pub.dev/packages/flutter_secure_storage) | Encrypted credentials |
 | [`wakelock_plus`](https://pub.dev/packages/wakelock_plus) | Screen wake lock |
-| [`home_widget`](https://pub.dev/packages/home_widget) | Android home screen widget |
-| [`flutter_local_notifications`](https://pub.dev/packages/flutter_local_notifications) | Idle notifications |
-| [`file_picker`](https://pub.dev/packages/file_picker) | Local file selection |
-| [`share_plus`](https://pub.dev/packages/share_plus) | Share public key |
+| [`pinenacl`](https://pub.dev/packages/pinenacl) | Ed25519 keys |
+| [`home_widget`](https://pub.dev/packages/home_widget) | Home screen widget |
+| [`file_picker`](https://pub.dev/packages/file_picker) | File selection |
 
 ---
 
-## Contributing
+<p align="center">
+  <strong>If Claude Carry saved you a trip to your desk, consider leaving a ⭐</strong>
+</p>
 
-Contributions are welcome! Please read the [Contributing Guide](CONTRIBUTING.md) before opening a PR.
-
----
-
-## License
-
-[MIT](LICENSE) — free for personal and commercial use.
+<p align="center">
+  <a href="LICENSE">MIT License</a> · Made with 🤖 + ☕
+</p>
