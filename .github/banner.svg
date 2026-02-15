@@ -112,7 +112,7 @@
     <text x="110" font-family="system-ui, sans-serif" font-size="14" fill="#585B70">Flutter</text>
     <text x="160" font-family="system-ui, sans-serif" font-size="14" fill="#585B70">·</text>
     <text x="175" font-family="system-ui, sans-serif" font-size="14" fill="#585B70">Cross-platform</text>
-    <text x="235" font-family="system-ui, sans-serif" font-size="14" fill="#585B70">·</text>
-    <text x="250" font-family="system-ui, sans-serif" font-size="14" fill="#585B70">MIT License</text>
+    <text x="290" font-family="system-ui, sans-serif" font-size="14" fill="#585B70">·</text>
+    <text x="305" font-family="system-ui, sans-serif" font-size="14" fill="#585B70">MIT License</text>
   </g>
 </svg>
