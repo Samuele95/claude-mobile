@@ -4,6 +4,7 @@ import 'package:xterm/xterm.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../core/providers.dart';
+import '../../core/utils/platform_utils.dart';
 import '../../core/models/connection_state.dart';
 import '../../core/models/server_profile.dart';
 import '../../core/models/session.dart';
@@ -32,14 +33,14 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
   void initState() {
     super.initState();
     final prefs = ref.read(preferencesProvider);
-    if (prefs.wakeLock) {
+    if (isMobile && prefs.wakeLock) {
       WakelockPlus.enable();
     }
   }
 
   @override
   void dispose() {
-    WakelockPlus.disable();
+    if (isMobile) WakelockPlus.disable();
     super.dispose();
   }
 
@@ -292,8 +293,8 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
               child: controller != null
                   ? TerminalView(
                       controller.terminal,
-                      readOnly: true,
-                      hardwareKeyboardOnly: true,
+                      readOnly: isMobile,
+                      hardwareKeyboardOnly: isMobile,
                       theme: AppTerminalThemes.fromPreferences(
                           prefs.themeName),
                       textStyle: TerminalStyle(
@@ -305,7 +306,7 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
                     )
                   : const Center(child: Text('No active session')),
             ),
-            if (controller != null)
+            if (isMobile && controller != null)
               SmartToolbar(
                 controller: controller,
                 onAttachFile: _attachFile,

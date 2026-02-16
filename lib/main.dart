@@ -1,22 +1,33 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:home_widget/home_widget.dart';
 import 'app.dart';
+import 'core/utils/platform_utils.dart';
+import 'core/utils/desktop_window.dart';
 import 'features/settings/preferences_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    systemNavigationBarColor: Colors.transparent,
-  ));
+  if (isMobile) {
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      systemNavigationBarColor: Colors.transparent,
+    ));
 
-  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  }
 
-  HomeWidget.setAppGroupId('com.claudemobile.claude_mobile');
-  HomeWidget.registerInteractivityCallback(interactivityCallback);
+  if (Platform.isAndroid) {
+    HomeWidget.setAppGroupId('com.claudemobile.claude_mobile');
+    HomeWidget.registerInteractivityCallback(interactivityCallback);
+  }
+
+  if (isDesktop) {
+    await initDesktopWindow();
+  }
 
   final savedPrefs = await AppPreferences.loadFromDisk();
 

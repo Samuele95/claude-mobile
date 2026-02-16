@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/models/session.dart';
 import '../../core/providers.dart';
+import '../../core/utils/platform_utils.dart';
 
 class SessionTabBar extends ConsumerWidget {
   final VoidCallback onNewSession;
@@ -102,7 +103,7 @@ class _SessionTab extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       onLongPress: () {
-        HapticFeedback.mediumImpact();
+        if (isMobile) HapticFeedback.mediumImpact();
         showModalBottomSheet(
           context: context,
           builder: (_) => Column(
@@ -129,6 +130,31 @@ class _SessionTab extends StatelessWidget {
           ),
         );
       },
+      onSecondaryTapDown: isDesktop
+          ? (details) {
+              final overlay = Overlay.of(context)
+                  .context
+                  .findRenderObject() as RenderBox;
+              showMenu<String>(
+                context: context,
+                position: RelativeRect.fromRect(
+                  details.globalPosition & const Size(1, 1),
+                  Offset.zero & overlay.size,
+                ),
+                items: const [
+                  PopupMenuItem(value: 'reconnect', child: Text('Reconnect')),
+                  PopupMenuItem(
+                    value: 'close',
+                    child: Text('Close session',
+                        style: TextStyle(color: Colors.redAccent)),
+                  ),
+                ],
+              ).then((value) {
+                if (value == 'reconnect') onReconnect();
+                if (value == 'close') onClose();
+              });
+            }
+          : null,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
         padding: const EdgeInsets.symmetric(horizontal: 10),

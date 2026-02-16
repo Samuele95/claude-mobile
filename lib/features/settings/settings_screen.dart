@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/utils/platform_utils.dart';
 import 'preferences_provider.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -45,14 +46,15 @@ class SettingsScreen extends ConsumerWidget {
             ),
             const Divider(),
             _SectionHeader('Terminal'),
-            SwitchListTile(
-              title: const Text('Keep screen awake'),
-              subtitle: const Text('Prevent sleep during terminal sessions'),
-              secondary: const Icon(Icons.visibility_outlined),
-              value: prefs.wakeLock,
-              onChanged: (v) =>
-                  ref.read(preferencesProvider.notifier).setWakeLock(v),
-            ),
+            if (isMobile)
+              SwitchListTile(
+                title: const Text('Keep screen awake'),
+                subtitle: const Text('Prevent sleep during terminal sessions'),
+                secondary: const Icon(Icons.visibility_outlined),
+                value: prefs.wakeLock,
+                onChanged: (v) =>
+                    ref.read(preferencesProvider.notifier).setWakeLock(v),
+              ),
             SwitchListTile(
               title: const Text('Auto-reconnect'),
               subtitle: const Text('Reconnect automatically on disconnect'),
@@ -61,27 +63,29 @@ class SettingsScreen extends ConsumerWidget {
               onChanged: (v) =>
                   ref.read(preferencesProvider.notifier).setAutoReconnect(v),
             ),
-            const Divider(),
-            _SectionHeader('Feedback'),
-            SwitchListTile(
-              title: const Text('Haptic feedback'),
-              subtitle: const Text('Vibrate on toolbar key press'),
-              secondary: const Icon(Icons.vibration),
-              value: prefs.haptics,
-              onChanged: (v) =>
-                  ref.read(preferencesProvider.notifier).setHaptics(v),
-            ),
-            const Divider(),
-            _SectionHeader('Notifications'),
-            SwitchListTile(
-              title: const Text('Task completion'),
-              subtitle:
-                  const Text('Notify when Claude goes idle after activity'),
-              secondary: const Icon(Icons.notifications_outlined),
-              value: prefs.notifyOnIdle,
-              onChanged: (v) =>
-                  ref.read(preferencesProvider.notifier).setNotifyOnIdle(v),
-            ),
+            if (isMobile) ...[
+              const Divider(),
+              _SectionHeader('Feedback'),
+              SwitchListTile(
+                title: const Text('Haptic feedback'),
+                subtitle: const Text('Vibrate on toolbar key press'),
+                secondary: const Icon(Icons.vibration),
+                value: prefs.haptics,
+                onChanged: (v) =>
+                    ref.read(preferencesProvider.notifier).setHaptics(v),
+              ),
+              const Divider(),
+              _SectionHeader('Notifications'),
+              SwitchListTile(
+                title: const Text('Task completion'),
+                subtitle:
+                    const Text('Notify when Claude goes idle after activity'),
+                secondary: const Icon(Icons.notifications_outlined),
+                value: prefs.notifyOnIdle,
+                onChanged: (v) =>
+                    ref.read(preferencesProvider.notifier).setNotifyOnIdle(v),
+              ),
+            ],
           ],
         ),
       ),

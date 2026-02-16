@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/providers.dart';
+import '../../core/utils/platform_utils.dart';
 import 'remote_browser.dart';
 import 'local_browser.dart';
 
 class FilePanel extends ConsumerWidget {
   final String sessionId;
+  final bool isDrawer;
 
-  const FilePanel({super.key, required this.sessionId});
+  const FilePanel({super.key, required this.sessionId, this.isDrawer = true});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -52,7 +54,7 @@ class FilePanel extends ConsumerWidget {
                     sessionId: sessionId,
                     onSendToTerminal: (path) {
                       controller?.sendText(path);
-                      Navigator.of(context).pop();
+                      if (isDrawer) Navigator.of(context).pop();
                     },
                   ),
                 ),
@@ -71,9 +73,9 @@ class FilePanel extends ConsumerWidget {
                       .withValues(alpha: 0.3),
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   alignment: Alignment.centerLeft,
-                  child: const Text(
-                    'LOCAL PHONE',
-                    style: TextStyle(
+                  child: Text(
+                    isMobile ? 'LOCAL PHONE' : 'LOCAL FILES',
+                    style: const TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 1,

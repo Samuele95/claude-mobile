@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/providers.dart';
 import '../../core/utils/dialogs.dart';
 import '../../core/utils/format_utils.dart';
+import '../../core/utils/platform_utils.dart';
 import 'file_item_tile.dart';
 
 class RemoteBrowser extends ConsumerStatefulWidget {
@@ -156,6 +157,38 @@ class _RemoteBrowserState extends ConsumerState<RemoteBrowser> {
     }
   }
 
+  void _showDesktopContextMenu(
+      BuildContext context, _FileEntry entry, TapDownDetails details) {
+    final fullPath = '$_currentPath/${entry.name}';
+    final overlay =
+        Overlay.of(context).context.findRenderObject() as RenderBox;
+    showMenu<String>(
+      context: context,
+      position: RelativeRect.fromRect(
+        details.globalPosition & const Size(1, 1),
+        Offset.zero & overlay.size,
+      ),
+      items: [
+        const PopupMenuItem(value: 'copy', child: Text('Copy path')),
+        const PopupMenuItem(value: 'send', child: Text('Send to terminal')),
+        const PopupMenuItem(
+          value: 'delete',
+          child: Text('Delete', style: TextStyle(color: Colors.redAccent)),
+        ),
+      ],
+    ).then((value) {
+      if (value == null) return;
+      switch (value) {
+        case 'copy':
+          Clipboard.setData(ClipboardData(text: fullPath));
+        case 'send':
+          widget.onSendToTerminal(fullPath);
+        case 'delete':
+          _confirmDelete(entry, fullPath);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -213,6 +246,10 @@ class _RemoteBrowserState extends ConsumerState<RemoteBrowser> {
                                 : () {},
                             onLongPress: () =>
                                 _showContextMenu(context, entry),
+                            onSecondaryTapDown: isDesktop
+                                ? (details) => _showDesktopContextMenu(
+                                    context, entry, details)
+                                : null,
                           );
                         },
                       ),

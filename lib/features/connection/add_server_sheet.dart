@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/models/server_profile.dart';
 import '../../core/providers.dart';
 import '../../core/ssh/ssh_service.dart';
+import '../../core/utils/platform_utils.dart';
 import '../settings/preferences_provider.dart';
 
 class AddServerSheet extends ConsumerStatefulWidget {
@@ -120,7 +121,8 @@ class _AddServerSheetState extends ConsumerState<AddServerSheet> {
   Widget build(BuildContext context) {
     return ConstrainedBox(
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.85,
+        maxHeight:
+            isDesktop ? 600 : MediaQuery.of(context).size.height * 0.85,
       ),
       child: Padding(
         padding: const EdgeInsets.only(left: 24, right: 24, top: 24),
@@ -129,7 +131,9 @@ class _AddServerSheetState extends ConsumerState<AddServerSheet> {
           child: SingleChildScrollView(
             child: Padding(
               padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+                bottom: isMobile
+                    ? MediaQuery.of(context).viewInsets.bottom + 24
+                    : 24,
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,

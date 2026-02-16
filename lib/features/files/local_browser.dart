@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../core/utils/format_utils.dart';
+import '../../core/utils/platform_utils.dart';
 import 'file_item_tile.dart';
 
 class LocalBrowser extends StatefulWidget {
@@ -11,7 +12,7 @@ class LocalBrowser extends StatefulWidget {
 }
 
 class _LocalBrowserState extends State<LocalBrowser> {
-  String _currentPath = '/storage/emulated/0';
+  String _currentPath = defaultLocalPath;
   List<FileSystemEntity> _entries = [];
   bool _loading = true;
   String? _error;

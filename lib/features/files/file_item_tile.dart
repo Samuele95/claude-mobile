@@ -7,6 +7,7 @@ class FileItemTile extends StatelessWidget {
   final String? subtitle;
   final VoidCallback onTap;
   final VoidCallback? onLongPress;
+  final void Function(TapDownDetails)? onSecondaryTapDown;
 
   const FileItemTile({
     super.key,
@@ -15,6 +16,7 @@ class FileItemTile extends StatelessWidget {
     this.subtitle,
     required this.onTap,
     this.onLongPress,
+    this.onSecondaryTapDown,
   });
 
   IconData get _icon {
@@ -40,7 +42,9 @@ class FileItemTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
+    return GestureDetector(
+      onSecondaryTapDown: onSecondaryTapDown,
+      child: ListTile(
       dense: true,
       leading: Icon(_icon, color: _iconColor(context), size: 22),
       title: Text(
@@ -56,6 +60,7 @@ class FileItemTile extends StatelessWidget {
         onTap();
       },
       onLongPress: onLongPress,
+      ),
     );
   }
 }
