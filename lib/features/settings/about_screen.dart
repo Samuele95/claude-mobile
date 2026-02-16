@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
-  static const _version = '1.3.0';
+  static const _version = '1.3.1';
   static const _repoUrl = 'https://github.com/Samuele95/claude-carry';
 
   @override
@@ -23,6 +23,11 @@ class AboutScreen extends StatelessWidget {
               width: 96,
               height: 96,
               decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF7C3AED), Color(0xFF5B21B6)],
+                ),
                 borderRadius: BorderRadius.circular(22),
                 boxShadow: [
                   BoxShadow(
@@ -38,22 +43,10 @@ class AboutScreen extends StatelessWidget {
                   'assets/logo.png',
                   width: 96,
                   height: 96,
-                  errorBuilder: (_, e, s) => Container(
-                    width: 96,
-                    height: 96,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [Color(0xFF7C3AED), Color(0xFF5B21B6)],
-                      ),
-                      borderRadius: BorderRadius.circular(22),
-                    ),
-                    child: const Icon(
-                      Icons.terminal_rounded,
-                      color: Colors.white,
-                      size: 48,
-                    ),
+                  errorBuilder: (_, e, s) => const Icon(
+                    Icons.terminal_rounded,
+                    color: Colors.white,
+                    size: 48,
                   ),
                 ),
               ),
@@ -155,7 +148,7 @@ class AboutScreen extends StatelessWidget {
                   ),
             ),
           ),
-          const SizedBox(height: 32),
+          SizedBox(height: MediaQuery.of(context).viewPadding.bottom + 32),
         ],
       ),
     );

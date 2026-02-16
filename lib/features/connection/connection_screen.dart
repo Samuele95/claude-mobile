@@ -6,22 +6,32 @@ import '../../core/models/session.dart';
 import '../../core/providers.dart';
 import '../../core/utils/dialogs.dart';
 import '../settings/settings_screen.dart';
+import '../settings/about_screen.dart';
 import '../settings/preferences_provider.dart';
 import 'add_server_sheet.dart';
 import 'key_display.dart';
 
-class ConnectionScreen extends ConsumerWidget {
+class ConnectionScreen extends ConsumerStatefulWidget {
   const ConnectionScreen({super.key});
 
-  Future<void> _connect(
-      BuildContext context, WidgetRef ref, ServerProfile profile) async {
-    final manager = ref.read(connectionManagerProvider);
-    final storage = ref.read(secureStorageProvider);
-    final prefs = ref.read(preferencesProvider);
+  @override
+  ConsumerState<ConnectionScreen> createState() => _ConnectionScreenState();
+}
 
-    if (prefs.haptics) HapticFeedback.lightImpact();
+class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
+  bool _connecting = false;
+
+  Future<void> _connect(ServerProfile profile) async {
+    if (_connecting) return;
+    setState(() => _connecting = true);
 
     try {
+      final manager = ref.read(connectionManagerProvider);
+      final storage = ref.read(secureStorageProvider);
+      final prefs = ref.read(preferencesProvider);
+
+      if (prefs.haptics) HapticFeedback.lightImpact();
+
       String? password;
       if (profile.authMethod == AuthMethod.password) {
         password = await storage.read(key: 'password_${profile.id}');
@@ -31,19 +41,20 @@ class ConnectionScreen extends ConsumerWidget {
           await manager.createSession(profile, password: password);
       ref.read(activeSessionIdProvider.notifier).state = sessionId;
     } catch (e) {
-      if (context.mounted) {
+      if (mounted) {
         showErrorDialog(
           context,
           title: 'Connection Failed',
           error: e,
-          onRetry: () => _connect(context, ref, profile),
+          onRetry: () => _connect(profile),
         );
       }
+    } finally {
+      if (mounted) setState(() => _connecting = false);
     }
   }
 
-  Future<void> _deleteProfile(
-      BuildContext context, WidgetRef ref, ServerProfile profile) async {
+  Future<void> _deleteProfile(ServerProfile profile) async {
     final confirmed = await showConfirmDialog(
       context,
       title: 'Delete Server',
@@ -58,12 +69,13 @@ class ConnectionScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final profiles = ref.watch(profilesProvider);
     final sessions = ref.watch(sessionsProvider).valueOrNull ?? [];
 
     return Scaffold(
       body: SafeArea(
+        bottom: false,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Column(
@@ -72,12 +84,24 @@ class ConnectionScreen extends ConsumerWidget {
               const SizedBox(height: 16),
               Align(
                 alignment: Alignment.centerRight,
-                child: IconButton(
-                  icon: const Icon(Icons.settings_outlined),
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                        builder: (_) => const SettingsScreen()),
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.info_outline_rounded),
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                            builder: (_) => const AboutScreen()),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.settings_outlined),
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                            builder: (_) => const SettingsScreen()),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 8),
@@ -164,12 +188,13 @@ class ConnectionScreen extends ConsumerWidget {
                               ),
                               child: _ProfileCard(
                                 profile: profile,
+                                connecting: _connecting,
                                 onTap: () =>
-                                    _connect(context, ref, profile),
+                                    _connect(profile),
                                 onEdit: () =>
                                     _showEditSheet(context, profile),
                                 onDelete: () =>
-                                    _deleteProfile(context, ref, profile),
+                                    _deleteProfile(profile),
                               ),
                             )),
                       if (list.isNotEmpty) ...[
@@ -179,6 +204,7 @@ class ConnectionScreen extends ConsumerWidget {
                       ],
                       const SizedBox(height: 24),
                       const KeyDisplay(),
+                      SizedBox(height: MediaQuery.of(context).viewPadding.bottom + 24),
                     ],
                   ),
                   loading: () =>
@@ -324,12 +350,14 @@ class _EmptyState extends StatelessWidget {
 
 class _ProfileCard extends StatelessWidget {
   final ServerProfile profile;
+  final bool connecting;
   final VoidCallback onTap;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
   const _ProfileCard({
     required this.profile,
+    required this.connecting,
     required this.onTap,
     required this.onEdit,
     required this.onDelete,
@@ -352,10 +380,15 @@ class _ProfileCard extends StatelessWidget {
                   color: Theme.of(context).colorScheme.primaryContainer,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  Icons.dns_rounded,
-                  color: Theme.of(context).colorScheme.onPrimaryContainer,
-                ),
+                child: connecting
+                    ? const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Icon(
+                        Icons.dns_rounded,
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                      ),
               ),
               const SizedBox(width: 16),
               Expanded(

@@ -143,6 +143,7 @@ class SshService {
 
   Future<void> reconnect() async {
     if (_activeProfile == null) return;
+    final wasAutoReconnect = autoReconnect;
     _setState(SshConnectionState.reconnecting);
     try {
       await connect(
@@ -151,7 +152,9 @@ class SshService {
         initialWidth: _lastWidth,
         initialHeight: _lastHeight,
       );
+      autoReconnect = wasAutoReconnect;
     } catch (_) {
+      autoReconnect = wasAutoReconnect;
       _setState(SshConnectionState.error);
     }
   }

@@ -27,7 +27,7 @@ class SessionTabBar extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
-      height: 40,
+      height: 44,
       decoration: BoxDecoration(
         color: colorScheme.surface,
         border: Border(
@@ -177,14 +177,6 @@ class _SessionTab extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 4),
-            GestureDetector(
-              onTap: onClose,
-              child: Icon(
-                Icons.close,
-                size: 14,
-                color: colorScheme.onSurface.withValues(alpha: 0.5),
-              ),
-            ),
           ],
         ),
       ),

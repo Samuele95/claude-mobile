@@ -12,6 +12,7 @@ import '../../core/utils/dialogs.dart';
 import '../../theme/terminal_theme.dart';
 import '../files/file_panel.dart';
 import '../settings/settings_screen.dart';
+import '../settings/about_screen.dart';
 import '../settings/preferences_provider.dart';
 import 'smart_toolbar.dart';
 import 'command_palette.dart';
@@ -166,6 +167,58 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
     ).then((_) => _refocusTerminal());
   }
 
+  void _showSessionMenu() {
+    final sessions = ref.read(sessionsProvider).valueOrNull ?? [];
+    final activeId = ref.read(activeSessionIdProvider);
+
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.add),
+              title: const Text('New session'),
+              onTap: () {
+                Navigator.pop(ctx);
+                ref.read(activeSessionIdProvider.notifier).state = null;
+              },
+            ),
+            const Divider(height: 1),
+            ...sessions.map((session) => ListTile(
+                  leading: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: session.state.isConnected
+                          ? Colors.green
+                          : Colors.amber,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  title: Text(session.profile.name),
+                  subtitle: Text(session.state.label),
+                  selected: session.id == activeId,
+                  trailing: IconButton(
+                    icon: const Icon(Icons.close, size: 18),
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _disconnectSession(session.id);
+                    },
+                  ),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    ref.read(activeSessionIdProvider.notifier).state =
+                        session.id;
+                  },
+                )),
+          ],
+        ),
+      ),
+    ).then((_) => _refocusTerminal());
+  }
+
   Future<void> _disconnectSession(String sessionId) async {
     final confirmed = await showConfirmDialog(
       context,
@@ -217,6 +270,7 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
         if (!isOpen) _refocusTerminal();
       },
       body: SafeArea(
+        bottom: false,
         child: Column(
           children: [
             SessionTabBar(
@@ -236,29 +290,28 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
                   MaterialPageRoute(
                       builder: (_) => const SettingsScreen()),
                 ).then((_) => _refocusTerminal()),
+                onAbout: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                      builder: (_) => const AboutScreen()),
+                ).then((_) => _refocusTerminal()),
                 onConnectionInfo: () =>
                     _showConnectionInfo(activeSession!),
               ),
             Expanded(
               child: controller != null
-                  ? MediaQuery.removePadding(
-                      context: context,
-                      removeTop: true,
-                      removeBottom: true,
-                      child: TerminalView(
-                        controller.terminal,
-                        focusNode: _terminalFocusNode,
-                        autofocus: true,
-                        deleteDetection: true,
-                        theme: AppTerminalThemes.fromPreferences(
-                            prefs.themeName),
-                        textStyle: TerminalStyle(
-                          fontSize: prefs.fontSize,
-                          fontFamily: 'JetBrainsMono',
-                        ),
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 4),
+                  ? TerminalView(
+                      controller.terminal,
+                      focusNode: _terminalFocusNode,
+                      autofocus: true,
+                      deleteDetection: true,
+                      theme: AppTerminalThemes.fromPreferences(
+                          prefs.themeName),
+                      textStyle: TerminalStyle(
+                        fontSize: prefs.fontSize,
+                        fontFamily: 'JetBrainsMono',
                       ),
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 4),
                     )
                   : const Center(child: Text('No active session')),
             ),
@@ -267,7 +320,9 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
                 controller: controller,
                 onAttachFile: _attachFile,
                 onCommandPalette: _showCommandPalette,
+                onSessionMenu: _showSessionMenu,
               ),
+            SizedBox(height: MediaQuery.of(context).viewPadding.bottom),
           ],
         ),
       ),
@@ -313,6 +368,7 @@ class _ConnectionPill extends StatelessWidget {
   final VoidCallback onDisconnect;
   final VoidCallback onFilePanel;
   final VoidCallback onSettings;
+  final VoidCallback onAbout;
   final VoidCallback onConnectionInfo;
 
   const _ConnectionPill({
@@ -321,6 +377,7 @@ class _ConnectionPill extends StatelessWidget {
     required this.onDisconnect,
     required this.onFilePanel,
     required this.onSettings,
+    required this.onAbout,
     required this.onConnectionInfo,
   });
 
@@ -370,6 +427,8 @@ class _ConnectionPill extends StatelessWidget {
                   onConnectionInfo();
                 case 'settings':
                   onSettings();
+                case 'about':
+                  onAbout();
                 case 'disconnect':
                   onDisconnect();
               }
@@ -390,6 +449,15 @@ class _ConnectionPill extends StatelessWidget {
                   dense: true,
                   leading: Icon(Icons.settings_outlined, size: 20),
                   title: Text('Settings'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'about',
+                child: ListTile(
+                  dense: true,
+                  leading: Icon(Icons.info_outline_rounded, size: 20),
+                  title: Text('About'),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),

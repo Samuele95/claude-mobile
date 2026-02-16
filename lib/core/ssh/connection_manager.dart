@@ -11,6 +11,7 @@ class ConnectionManager {
   final Map<String, SshService> _sshServices = {};
   final Map<String, SftpService> _sftpServices = {};
   final Map<String, Session> _sessions = {};
+  bool _creatingSession = false;
 
   final _sessionsController = StreamController<List<Session>>.broadcast();
 
@@ -27,45 +28,57 @@ class ConnectionManager {
     ServerProfile profile, {
     String? password,
   }) async {
-    final sessionId = DateTime.now().millisecondsSinceEpoch.toString();
-    final ssh = SshService(keyManager: _keyManager);
-    final sftp = SftpService();
+    // Guard against concurrent session creation (e.g. double-tap)
+    if (_creatingSession) {
+      throw StateError('Session creation already in progress');
+    }
+    _creatingSession = true;
 
-    ssh.autoReconnect = true;
-    _sshServices[sessionId] = ssh;
-    _sftpServices[sessionId] = sftp;
+    try {
+      final sessionId = DateTime.now().millisecondsSinceEpoch.toString();
+      final ssh = SshService(keyManager: _keyManager);
+      final sftp = SftpService();
 
-    final session = Session(
-      id: sessionId,
-      profile: profile,
-      state: SshConnectionState.connecting,
-      createdAt: DateTime.now(),
-    );
-    _sessions[sessionId] = session;
-    _emitSessions();
+      ssh.autoReconnect = true;
+      _sshServices[sessionId] = ssh;
+      _sftpServices[sessionId] = sftp;
 
-    // Listen to state changes from SshService
-    ssh.stateStream.listen((state) {
-      final existing = _sessions[sessionId];
-      if (existing != null) {
-        _sessions[sessionId] = existing.copyWith(state: state);
-        _emitSessions();
+      final session = Session(
+        id: sessionId,
+        profile: profile,
+        state: SshConnectionState.connecting,
+        createdAt: DateTime.now(),
+      );
+      _sessions[sessionId] = session;
+      _emitSessions();
+
+      // Listen to state changes from SshService
+      ssh.stateStream.listen((state) {
+        final existing = _sessions[sessionId];
+        if (existing != null) {
+          _sessions[sessionId] = existing.copyWith(state: state);
+          _emitSessions();
+        }
+      });
+
+      await ssh.connect(profile, password: password);
+
+      // Run startup command — longer delay ensures shell fully initializes
+      // (login profile, MOTD, etc.) before we send the claude command.
+      if (profile.startupCommand.isNotEmpty) {
+        await Future.delayed(const Duration(milliseconds: 800));
+        ssh.write('${profile.startupCommand}\n');
       }
-    });
 
-    await ssh.connect(profile, password: password);
+      // Initialize SFTP
+      if (ssh.client != null) {
+        await sftp.initialize(ssh.client!);
+      }
 
-    // Run startup command
-    if (profile.startupCommand.isNotEmpty) {
-      ssh.write('${profile.startupCommand}\n');
+      return sessionId;
+    } finally {
+      _creatingSession = false;
     }
-
-    // Initialize SFTP
-    if (ssh.client != null) {
-      await sftp.initialize(ssh.client!);
-    }
-
-    return sessionId;
   }
 
   Future<void> closeSession(String sessionId) async {

@@ -9,12 +9,14 @@ class SmartToolbar extends ConsumerStatefulWidget {
   final SshTerminalController controller;
   final VoidCallback onAttachFile;
   final VoidCallback onCommandPalette;
+  final VoidCallback onSessionMenu;
 
   const SmartToolbar({
     super.key,
     required this.controller,
     required this.onAttachFile,
     required this.onCommandPalette,
+    required this.onSessionMenu,
   });
 
   @override
@@ -64,6 +66,11 @@ class _SmartToolbarState extends ConsumerState<SmartToolbar> {
       ),
       child: Row(
         children: [
+          _ToolbarButton(
+            icon: Icons.tab,
+            onTap: widget.onSessionMenu,
+          ),
+          _ToolbarDivider(),
           _ToolbarButton(
             icon: Icons.keyboard_arrow_left,
             onTap: () => _onKey(TerminalKey.arrowLeft),
