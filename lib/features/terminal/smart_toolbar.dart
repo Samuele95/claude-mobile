@@ -25,6 +25,16 @@ class SmartToolbar extends ConsumerStatefulWidget {
 
 class _SmartToolbarState extends ConsumerState<SmartToolbar> {
   bool _ctrlActive = false;
+  final _inputController = TextEditingController();
+  final _inputFocusNode = FocusNode();
+  String _prevText = '';
+
+  @override
+  void dispose() {
+    _inputController.dispose();
+    _inputFocusNode.dispose();
+    super.dispose();
+  }
 
   void _onKey(TerminalKey key) {
     if (ref.read(preferencesProvider).haptics) {
@@ -50,72 +60,162 @@ class _SmartToolbarState extends ConsumerState<SmartToolbar> {
     }
   }
 
+  void _onInputChanged(String text) {
+    if (text.length > _prevText.length) {
+      // Characters were added — send the new characters
+      final added = text.substring(_prevText.length);
+      if (_ctrlActive) {
+        for (final c in added.runes) {
+          widget.controller.sendCtrl(String.fromCharCode(c));
+        }
+        setState(() => _ctrlActive = false);
+      } else {
+        widget.controller.sendText(added);
+      }
+    } else if (text.length < _prevText.length) {
+      // Backspace — send delete character
+      final deleted = _prevText.length - text.length;
+      for (var i = 0; i < deleted; i++) {
+        widget.controller.sendText('\x7f'); // DEL
+      }
+    }
+    _prevText = text;
+  }
+
+  void _onInputSubmitted(String _) {
+    widget.controller.sendText('\n');
+    _inputController.clear();
+    _prevText = '';
+    _inputFocusNode.requestFocus();
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Container(
-      height: 48,
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        border: Border(
-          top: BorderSide(
-            color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Input row
+        Container(
+          height: 44,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            border: Border(
+              top: BorderSide(
+                color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+              ),
+            ),
+          ),
+          child: Row(
+            children: [
+              Text(
+                _ctrlActive ? 'C-' : '\$',
+                style: TextStyle(
+                  fontFamily: 'JetBrainsMono',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: _ctrlActive
+                      ? colorScheme.primary
+                      : colorScheme.onSurface.withValues(alpha: 0.5),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: _inputController,
+                  focusNode: _inputFocusNode,
+                  autofocus: true,
+                  style: TextStyle(
+                    fontFamily: 'JetBrainsMono',
+                    fontSize: 14,
+                    color: colorScheme.onSurface,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'Type here...',
+                    hintStyle: TextStyle(
+                      color: colorScheme.onSurface.withValues(alpha: 0.3),
+                      fontSize: 14,
+                    ),
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding:
+                        const EdgeInsets.symmetric(vertical: 8),
+                  ),
+                  textInputAction: TextInputAction.send,
+                  onChanged: _onInputChanged,
+                  onSubmitted: _onInputSubmitted,
+                ),
+              ),
+            ],
           ),
         ),
-      ),
-      child: Row(
-        children: [
-          _ToolbarButton(
-            icon: Icons.tab,
-            onTap: widget.onSessionMenu,
+        // Toolbar buttons
+        Container(
+          height: 44,
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            border: Border(
+              top: BorderSide(
+                color: colorScheme.outlineVariant.withValues(alpha: 0.15),
+              ),
+            ),
           ),
-          _ToolbarDivider(),
-          _ToolbarButton(
-            icon: Icons.keyboard_arrow_left,
-            onTap: () => _onKey(TerminalKey.arrowLeft),
+          child: Row(
+            children: [
+              _ToolbarButton(
+                icon: Icons.tab,
+                onTap: widget.onSessionMenu,
+              ),
+              _ToolbarDivider(),
+              _ToolbarButton(
+                icon: Icons.keyboard_arrow_left,
+                onTap: () => _onKey(TerminalKey.arrowLeft),
+              ),
+              _ToolbarButton(
+                icon: Icons.keyboard_arrow_right,
+                onTap: () => _onKey(TerminalKey.arrowRight),
+              ),
+              _ToolbarButton(
+                icon: Icons.keyboard_arrow_up,
+                onTap: () => _onKey(TerminalKey.arrowUp),
+              ),
+              _ToolbarButton(
+                icon: Icons.keyboard_arrow_down,
+                onTap: () => _onKey(TerminalKey.arrowDown),
+              ),
+              _ToolbarDivider(),
+              _ToolbarTextButton(
+                label: 'Tab',
+                onTap: () => _onKey(TerminalKey.tab),
+              ),
+              _ToolbarTextButton(
+                label: 'Esc',
+                onTap: () => _onKey(TerminalKey.escape),
+              ),
+              _ToolbarTextButton(
+                label: 'Ctrl',
+                active: _ctrlActive,
+                onTap: _toggleCtrl,
+              ),
+              _ToolbarDivider(),
+              _ToolbarButton(
+                icon: Icons.content_paste,
+                onTap: _onPaste,
+              ),
+              _ToolbarButton(
+                icon: Icons.terminal,
+                onTap: widget.onCommandPalette,
+              ),
+              _ToolbarButton(
+                icon: Icons.attach_file,
+                onTap: widget.onAttachFile,
+              ),
+            ],
           ),
-          _ToolbarButton(
-            icon: Icons.keyboard_arrow_right,
-            onTap: () => _onKey(TerminalKey.arrowRight),
-          ),
-          _ToolbarButton(
-            icon: Icons.keyboard_arrow_up,
-            onTap: () => _onKey(TerminalKey.arrowUp),
-          ),
-          _ToolbarButton(
-            icon: Icons.keyboard_arrow_down,
-            onTap: () => _onKey(TerminalKey.arrowDown),
-          ),
-          _ToolbarDivider(),
-          _ToolbarTextButton(
-            label: 'Tab',
-            onTap: () => _onKey(TerminalKey.tab),
-          ),
-          _ToolbarTextButton(
-            label: 'Esc',
-            onTap: () => _onKey(TerminalKey.escape),
-          ),
-          _ToolbarTextButton(
-            label: 'Ctrl',
-            active: _ctrlActive,
-            onTap: _toggleCtrl,
-          ),
-          _ToolbarDivider(),
-          _ToolbarButton(
-            icon: Icons.content_paste,
-            onTap: _onPaste,
-          ),
-          _ToolbarButton(
-            icon: Icons.terminal,
-            onTap: widget.onCommandPalette,
-          ),
-          _ToolbarButton(
-            icon: Icons.attach_file,
-            onTap: widget.onAttachFile,
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

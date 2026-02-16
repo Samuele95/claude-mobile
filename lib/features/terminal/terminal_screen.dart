@@ -27,12 +27,10 @@ class TerminalScreen extends ConsumerStatefulWidget {
 
 class _TerminalScreenState extends ConsumerState<TerminalScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
-  late final FocusNode _terminalFocusNode;
 
   @override
   void initState() {
     super.initState();
-    _terminalFocusNode = FocusNode();
     final prefs = ref.read(preferencesProvider);
     if (prefs.wakeLock) {
       WakelockPlus.enable();
@@ -41,13 +39,8 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
 
   @override
   void dispose() {
-    _terminalFocusNode.dispose();
     WakelockPlus.disable();
     super.dispose();
-  }
-
-  void _refocusTerminal() {
-    _terminalFocusNode.requestFocus();
   }
 
   void _showCommandPalette() {
@@ -61,7 +54,7 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
       builder: (_) => CommandPalette(
         onSelect: (cmd) => controller.sendText('$cmd\n'),
       ),
-    ).then((_) => _refocusTerminal());
+    );
   }
 
   Future<void> _attachFile() async {
@@ -107,7 +100,7 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
         );
       }
     }
-    _refocusTerminal();
+
   }
 
   void _showConnectionInfo(Session session) {
@@ -164,7 +157,7 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
           ],
         ),
       ),
-    ).then((_) => _refocusTerminal());
+    );
   }
 
   void _showSessionMenu() {
@@ -216,7 +209,7 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
           ],
         ),
       ),
-    ).then((_) => _refocusTerminal());
+    );
   }
 
   Future<void> _disconnectSession(String sessionId) async {
@@ -266,9 +259,7 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
               child: FilePanel(sessionId: activeId),
             )
           : null,
-      onEndDrawerChanged: (isOpen) {
-        if (!isOpen) _refocusTerminal();
-      },
+      onEndDrawerChanged: (_) {},
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -289,11 +280,11 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
                 onSettings: () => Navigator.of(context).push(
                   MaterialPageRoute(
                       builder: (_) => const SettingsScreen()),
-                ).then((_) => _refocusTerminal()),
+                ),
                 onAbout: () => Navigator.of(context).push(
                   MaterialPageRoute(
                       builder: (_) => const AboutScreen()),
-                ).then((_) => _refocusTerminal()),
+                ),
                 onConnectionInfo: () =>
                     _showConnectionInfo(activeSession!),
               ),
@@ -301,9 +292,8 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
               child: controller != null
                   ? TerminalView(
                       controller.terminal,
-                      focusNode: _terminalFocusNode,
-                      autofocus: true,
-                      deleteDetection: true,
+                      readOnly: true,
+                      hardwareKeyboardOnly: true,
                       theme: AppTerminalThemes.fromPreferences(
                           prefs.themeName),
                       textStyle: TerminalStyle(
