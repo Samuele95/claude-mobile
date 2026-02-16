@@ -3,8 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:home_widget/home_widget.dart';
 import 'app.dart';
+import 'features/settings/preferences_provider.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
@@ -17,7 +18,14 @@ void main() {
   HomeWidget.setAppGroupId('com.claudemobile.claude_mobile');
   HomeWidget.registerInteractivityCallback(interactivityCallback);
 
-  runApp(const ProviderScope(child: ClaudeMobileApp()));
+  final savedPrefs = await AppPreferences.loadFromDisk();
+
+  runApp(ProviderScope(
+    overrides: [
+      initialPreferencesProvider.overrideWithValue(savedPrefs),
+    ],
+    child: const ClaudeMobileApp(),
+  ));
 }
 
 @pragma('vm:entry-point')

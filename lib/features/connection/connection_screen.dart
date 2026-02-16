@@ -54,20 +54,6 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
     }
   }
 
-  Future<void> _deleteProfile(ServerProfile profile) async {
-    final confirmed = await showConfirmDialog(
-      context,
-      title: 'Delete Server',
-      message:
-          'Are you sure you want to delete "${profile.name}"? This cannot be undone.',
-      confirmLabel: 'Delete',
-      destructive: true,
-    );
-    if (confirmed) {
-      ref.read(profilesProvider.notifier).remove(profile.id);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final profiles = ref.watch(profilesProvider);
@@ -193,8 +179,6 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
                                     _connect(profile),
                                 onEdit: () =>
                                     _showEditSheet(context, profile),
-                                onDelete: () =>
-                                    _deleteProfile(profile),
                               ),
                             )),
                       if (list.isNotEmpty) ...[
@@ -262,9 +246,7 @@ class _ActiveSessionCard extends StatelessWidget {
                 width: 8,
                 height: 8,
                 decoration: BoxDecoration(
-                  color: session.state.isConnected
-                      ? Colors.green
-                      : Colors.amber,
+                  color: session.state.statusColor,
                   shape: BoxShape.circle,
                 ),
               ),
@@ -353,14 +335,12 @@ class _ProfileCard extends StatelessWidget {
   final bool connecting;
   final VoidCallback onTap;
   final VoidCallback onEdit;
-  final VoidCallback onDelete;
 
   const _ProfileCard({
     required this.profile,
     required this.connecting,
     required this.onTap,
     required this.onEdit,
-    required this.onDelete,
   });
 
   @override
@@ -409,10 +389,6 @@ class _ProfileCard extends StatelessWidget {
               IconButton(
                 icon: const Icon(Icons.edit_outlined, size: 20),
                 onPressed: onEdit,
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete_outline, size: 20),
-                onPressed: onDelete,
               ),
             ],
           ),

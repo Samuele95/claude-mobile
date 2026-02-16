@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 enum SshConnectionState {
   disconnected,
   connecting,
@@ -20,5 +22,15 @@ enum SshConnectionState {
         SshConnectionState.connected => 'Connected',
         SshConnectionState.reconnecting => 'Reconnecting...',
         SshConnectionState.error => 'Error',
+      };
+
+  Color get statusColor => switch (this) {
+        SshConnectionState.connected => Colors.green,
+        SshConnectionState.reconnecting ||
+        SshConnectionState.connecting ||
+        SshConnectionState.authenticating ||
+        SshConnectionState.startingShell =>
+          Colors.amber,
+        _ => Colors.redAccent,
       };
 }

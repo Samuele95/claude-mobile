@@ -1,7 +1,7 @@
 name: claude_mobile
 description: "SSH terminal client for Claude Code — mobile & desktop"
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.4.0+1
 
 environment:
   sdk: ^3.11.0
@@ -23,6 +23,7 @@ dependencies:
   share_plus: ^10.1.4
   permission_handler: ^11.3.1
   wakelock_plus: ^1.2.8
+  shared_preferences: ^2.3.4
 
 dev_dependencies:
   flutter_test:

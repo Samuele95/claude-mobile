@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
-  static const _version = '1.3.1';
+  static const _version = '1.4.0';
   static const _repoUrl = 'https://github.com/Samuele95/claude-carry';
 
   @override

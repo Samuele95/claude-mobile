@@ -3,6 +3,7 @@ import '../models/session.dart';
 import '../models/server_profile.dart';
 import '../models/connection_state.dart';
 import '../storage/key_manager.dart';
+import '../utils/command_builder.dart';
 import 'ssh_service.dart';
 import 'sftp_service.dart';
 
@@ -11,6 +12,7 @@ class ConnectionManager {
   final Map<String, SshService> _sshServices = {};
   final Map<String, SftpService> _sftpServices = {};
   final Map<String, Session> _sessions = {};
+  final Map<String, StreamSubscription> _stateSubscriptions = {};
   bool _creatingSession = false;
 
   final _sessionsController = StreamController<List<Session>>.broadcast();
@@ -34,8 +36,8 @@ class ConnectionManager {
     }
     _creatingSession = true;
 
+    final sessionId = DateTime.now().millisecondsSinceEpoch.toString();
     try {
-      final sessionId = DateTime.now().millisecondsSinceEpoch.toString();
       final ssh = SshService(keyManager: _keyManager);
       final sftp = SftpService();
 
@@ -53,7 +55,7 @@ class ConnectionManager {
       _emitSessions();
 
       // Listen to state changes from SshService
-      ssh.stateStream.listen((state) {
+      _stateSubscriptions[sessionId] = ssh.stateStream.listen((state) {
         final existing = _sessions[sessionId];
         if (existing != null) {
           _sessions[sessionId] = existing.copyWith(state: state);
@@ -65,9 +67,10 @@ class ConnectionManager {
 
       // Run startup command — longer delay ensures shell fully initializes
       // (login profile, MOTD, etc.) before we send the claude command.
-      if (profile.startupCommand.isNotEmpty) {
+      final startupCmd = buildStartupCommand(profile);
+      if (startupCmd.isNotEmpty) {
         await Future.delayed(const Duration(milliseconds: 800));
-        ssh.write('${profile.startupCommand}\n');
+        ssh.write('$startupCmd\n');
       }
 
       // Initialize SFTP
@@ -76,17 +79,22 @@ class ConnectionManager {
       }
 
       return sessionId;
+    } catch (_) {
+      // Clean up on failure so we don't leak a half-initialized session
+      await closeSession(sessionId);
+      rethrow;
     } finally {
       _creatingSession = false;
     }
   }
 
   Future<void> closeSession(String sessionId) async {
+    await _stateSubscriptions.remove(sessionId)?.cancel();
     final ssh = _sshServices.remove(sessionId);
     final sftp = _sftpServices.remove(sessionId);
     _sessions.remove(sessionId);
 
-    ssh?.dispose();
+    await ssh?.dispose();
     sftp?.dispose();
     _emitSessions();
   }
@@ -107,9 +115,13 @@ class ConnectionManager {
     _sessionsController.add(_sessions.values.toList());
   }
 
-  void dispose() {
+  Future<void> dispose() async {
+    for (final sub in _stateSubscriptions.values) {
+      await sub.cancel();
+    }
+    _stateSubscriptions.clear();
     for (final ssh in _sshServices.values) {
-      ssh.dispose();
+      await ssh.dispose();
     }
     for (final sftp in _sftpServices.values) {
       sftp.dispose();

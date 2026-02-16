@@ -28,31 +28,34 @@ class AppTerminalThemes {
     searchHitForeground: const Color(0xFFFFFFFF),
   );
 
-  static final amoled = TerminalTheme(
-    cursor: dark.cursor,
-    selection: dark.selection,
-    foreground: dark.foreground,
-    background: const Color(0xFF000000),
-    black: dark.black,
-    red: dark.red,
-    green: dark.green,
-    yellow: dark.yellow,
-    blue: dark.blue,
-    magenta: dark.magenta,
-    cyan: dark.cyan,
-    white: dark.white,
-    brightBlack: dark.brightBlack,
-    brightRed: dark.brightRed,
-    brightGreen: dark.brightGreen,
-    brightYellow: dark.brightYellow,
-    brightBlue: dark.brightBlue,
-    brightMagenta: dark.brightMagenta,
-    brightCyan: dark.brightCyan,
-    brightWhite: dark.brightWhite,
-    searchHitBackground: dark.searchHitBackground,
-    searchHitBackgroundCurrent: dark.searchHitBackgroundCurrent,
-    searchHitForeground: dark.searchHitForeground,
-  );
+  static final amoled = _withBackground(dark, const Color(0xFF000000));
+
+  static TerminalTheme _withBackground(TerminalTheme base, Color bg) =>
+      TerminalTheme(
+        cursor: base.cursor,
+        selection: base.selection,
+        foreground: base.foreground,
+        background: bg,
+        black: base.black,
+        red: base.red,
+        green: base.green,
+        yellow: base.yellow,
+        blue: base.blue,
+        magenta: base.magenta,
+        cyan: base.cyan,
+        white: base.white,
+        brightBlack: base.brightBlack,
+        brightRed: base.brightRed,
+        brightGreen: base.brightGreen,
+        brightYellow: base.brightYellow,
+        brightBlue: base.brightBlue,
+        brightMagenta: base.brightMagenta,
+        brightCyan: base.brightCyan,
+        brightWhite: base.brightWhite,
+        searchHitBackground: base.searchHitBackground,
+        searchHitBackgroundCurrent: base.searchHitBackgroundCurrent,
+        searchHitForeground: base.searchHitForeground,
+      );
 
   // Catppuccin Latte palette
   static final light = TerminalTheme(

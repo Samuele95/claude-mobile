@@ -49,19 +49,22 @@ class SftpService {
             SftpFileOpenMode.truncate,
       );
 
-      int transferred = 0;
-      final stream = localFile.openRead();
+      try {
+        int transferred = 0;
+        final stream = localFile.openRead();
 
-      await for (final chunk in stream) {
-        await remoteFile.write(Stream.value(Uint8List.fromList(chunk)));
-        transferred += chunk.length;
-        _transferController.add(item.copyWith(
-          transferredBytes: transferred,
-          status: TransferStatus.inProgress,
-        ));
+        await for (final chunk in stream) {
+          await remoteFile.write(Stream.value(Uint8List.fromList(chunk)));
+          transferred += chunk.length;
+          _transferController.add(item.copyWith(
+            transferredBytes: transferred,
+            status: TransferStatus.inProgress,
+          ));
+        }
+      } finally {
+        await remoteFile.close();
       }
 
-      await remoteFile.close();
       _transferController.add(item.copyWith(
         transferredBytes: item.totalBytes,
         status: TransferStatus.completed,
@@ -85,12 +88,26 @@ class SftpService {
 
     try {
       final remoteFile = await _sftp!.open(remotePath);
-      final content = await remoteFile.readBytes();
-      await remoteFile.close();
 
       final localFile = File(localPath);
       await localFile.parent.create(recursive: true);
-      await localFile.writeAsBytes(content);
+      final sink = localFile.openWrite();
+
+      int transferred = 0;
+      try {
+        await for (final chunk in remoteFile.read()) {
+          sink.add(chunk);
+          transferred += chunk.length;
+          _transferController.add(item.copyWith(
+            transferredBytes: transferred,
+            status: TransferStatus.inProgress,
+          ));
+        }
+        await sink.flush();
+      } finally {
+        await sink.close();
+        await remoteFile.close();
+      }
 
       _transferController.add(item.copyWith(
         transferredBytes: item.totalBytes,
@@ -138,6 +155,7 @@ class SftpService {
   }
 
   void dispose() {
+    _sftp = null;
     _transferController.close();
   }
 }

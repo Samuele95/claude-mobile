@@ -27,13 +27,6 @@ class ServerProfile {
     required this.createdAt,
   });
 
-  String get startupCommand => switch (claudeMode) {
-        ClaudeMode.standard => 'claude',
-        ClaudeMode.skipPermissions => 'claude --dangerously-skip-permissions',
-        ClaudeMode.customPrompt =>
-          'claude -p "$customPrompt" --dangerously-skip-permissions',
-      };
-
   ServerProfile copyWith({
     String? name,
     String? host,

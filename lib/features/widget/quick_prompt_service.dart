@@ -46,7 +46,12 @@ class QuickPromptService {
               orElse: () => profiles.first)
           : profiles.first;
 
-      final escapedPrompt = prompt.replaceAll('"', '\\"');
+      // Escape for double-quoted shell string: backslash, dollar, backtick, double-quote
+      final escapedPrompt = prompt
+          .replaceAll(r'\', r'\\')
+          .replaceAll(r'$', r'\$')
+          .replaceAll('`', r'\`')
+          .replaceAll('"', r'\"');
       final command =
           'claude -p "$escapedPrompt" --dangerously-skip-permissions 2>&1';
       final result = await ssh.executeCommand(profile, command);
@@ -55,7 +60,7 @@ class QuickPromptService {
     } catch (e) {
       await _showNotification('Error', e.toString());
     } finally {
-      ssh.dispose();
+      await ssh.dispose();
       await HomeWidget.saveWidgetData<String>('status', 'idle');
       await HomeWidget.updateWidget(name: 'QuickPromptWidgetProvider');
     }

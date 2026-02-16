@@ -71,12 +71,12 @@ class _AddServerSheetState extends ConsumerState<AddServerSheet> {
     try {
       await tempSsh.connect(profile, password: _passwordCtrl.text);
       await tempSsh.disconnect();
-      setState(() => _testResult = 'success');
+      if (mounted) setState(() => _testResult = 'success');
     } catch (e) {
-      setState(() => _testResult = e.toString());
+      if (mounted) setState(() => _testResult = e.toString());
     } finally {
-      tempSsh.dispose();
-      setState(() => _testing = false);
+      await tempSsh.dispose();
+      if (mounted) setState(() => _testing = false);
     }
   }
 

@@ -371,15 +371,7 @@ class _ConnectionPill extends StatelessWidget {
     required this.onConnectionInfo,
   });
 
-  Color get _color => switch (state) {
-        SshConnectionState.connected => Colors.green,
-        SshConnectionState.reconnecting ||
-        SshConnectionState.connecting ||
-        SshConnectionState.authenticating ||
-        SshConnectionState.startingShell =>
-          Colors.amber,
-        _ => Colors.redAccent,
-      };
+  Color get _color => state.statusColor;
 
   @override
   Widget build(BuildContext context) {

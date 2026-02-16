@@ -17,6 +17,10 @@ class SshService {
   int _lastWidth = 80;
   int _lastHeight = 24;
 
+  StreamSubscription? _stdoutSub;
+  StreamSubscription? _stderrSub;
+
+  bool _disposed = false;
   bool autoReconnect = false;
   int _reconnectAttempts = 0;
   Timer? _reconnectTimer;
@@ -46,6 +50,12 @@ class SshService {
   }) async {
     if (_state.isActive) await disconnect();
 
+    // Clean up any lingering subscriptions from a previous connect attempt
+    await _stdoutSub?.cancel();
+    await _stderrSub?.cancel();
+    _stdoutSub = null;
+    _stderrSub = null;
+
     _activeProfile = profile;
     _password = password;
     _lastWidth = initialWidth;
@@ -66,13 +76,13 @@ class SshService {
         ),
       );
 
-      _shell!.stdout.listen(
+      _stdoutSub = _shell!.stdout.listen(
         (data) => _outputController.add(data),
         onError: (_) => _handleDisconnect(),
         onDone: _handleDisconnect,
       );
 
-      _shell!.stderr.listen(
+      _stderrSub = _shell!.stderr.listen(
         (data) => _outputController.add(data),
       );
 
@@ -142,7 +152,7 @@ class SshService {
   }
 
   Future<void> reconnect() async {
-    if (_activeProfile == null) return;
+    if (_disposed || _activeProfile == null) return;
     final wasAutoReconnect = autoReconnect;
     _setState(SshConnectionState.reconnecting);
     try {
@@ -169,7 +179,7 @@ class SshService {
       _reconnectAttempts++;
       _reconnectTimer?.cancel();
       _reconnectTimer = Timer(delay, () async {
-        if (autoReconnect) {
+        if (!_disposed && autoReconnect) {
           await reconnect();
         }
       });
@@ -180,6 +190,10 @@ class SshService {
     autoReconnect = false;
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
+    await _stdoutSub?.cancel();
+    await _stderrSub?.cancel();
+    _stdoutSub = null;
+    _stderrSub = null;
     _shell?.close();
     _client?.close();
     _shell = null;
@@ -187,10 +201,11 @@ class SshService {
     _setState(SshConnectionState.disconnected);
   }
 
-  void dispose() {
+  Future<void> dispose() async {
+    _disposed = true;
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
-    disconnect();
+    await disconnect();
     _stateController.close();
     _outputController.close();
   }

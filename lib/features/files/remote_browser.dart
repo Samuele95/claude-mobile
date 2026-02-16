@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/providers.dart';
 import '../../core/utils/dialogs.dart';
+import '../../core/utils/format_utils.dart';
 import 'file_item_tile.dart';
 
 class RemoteBrowser extends ConsumerStatefulWidget {
@@ -24,6 +25,7 @@ class _RemoteBrowserState extends ConsumerState<RemoteBrowser> {
   List<_FileEntry> _entries = [];
   bool _loading = true;
   String? _error;
+  int _loadGeneration = 0;
 
   @override
   void initState() {
@@ -32,6 +34,7 @@ class _RemoteBrowserState extends ConsumerState<RemoteBrowser> {
   }
 
   Future<void> _loadDirectory() async {
+    final generation = ++_loadGeneration;
     setState(() {
       _loading = true;
       _error = null;
@@ -40,6 +43,7 @@ class _RemoteBrowserState extends ConsumerState<RemoteBrowser> {
     try {
       final sftp = ref.read(sessionSftpProvider(widget.sessionId));
       if (sftp == null) {
+        if (generation != _loadGeneration) return;
         setState(() {
           _error = 'SFTP not available';
           _loading = false;
@@ -47,6 +51,7 @@ class _RemoteBrowserState extends ConsumerState<RemoteBrowser> {
         return;
       }
       final items = await sftp.listDirectory(_currentPath);
+      if (!mounted || generation != _loadGeneration) return;
       setState(() {
         _entries = items
             .map((i) => _FileEntry(
@@ -58,6 +63,7 @@ class _RemoteBrowserState extends ConsumerState<RemoteBrowser> {
         _loading = false;
       });
     } catch (e) {
+      if (!mounted || generation != _loadGeneration) return;
       setState(() {
         _error = e.toString();
         _loading = false;
@@ -150,12 +156,6 @@ class _RemoteBrowserState extends ConsumerState<RemoteBrowser> {
     }
   }
 
-  String _formatSize(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-  }
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -207,7 +207,7 @@ class _RemoteBrowserState extends ConsumerState<RemoteBrowser> {
                             isDirectory: entry.isDirectory,
                             subtitle: entry.isDirectory
                                 ? null
-                                : _formatSize(entry.size),
+                                : formatFileSize(entry.size),
                             onTap: entry.isDirectory
                                 ? () => _navigate(entry.name)
                                 : () {},

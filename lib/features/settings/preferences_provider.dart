@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../theme/app_theme.dart';
 
 class AppPreferences {
@@ -46,22 +47,73 @@ class AppPreferences {
         'light' => AppTheme.light,
         _ => AppTheme.dark,
       };
+
+  static Future<AppPreferences> loadFromDisk() async {
+    final prefs = await SharedPreferences.getInstance();
+    return AppPreferences(
+      themeName: prefs.getString('themeName') ?? 'dark',
+      fontSize: prefs.getDouble('fontSize') ?? 14,
+      haptics: prefs.getBool('haptics') ?? true,
+      notifyOnIdle: prefs.getBool('notifyOnIdle') ?? true,
+      idleThresholdSeconds: prefs.getInt('idleThresholdSeconds') ?? 10,
+      wakeLock: prefs.getBool('wakeLock') ?? true,
+      autoReconnect: prefs.getBool('autoReconnect') ?? true,
+    );
+  }
+
+  Future<void> saveToDisk() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('themeName', themeName);
+    await prefs.setDouble('fontSize', fontSize);
+    await prefs.setBool('haptics', haptics);
+    await prefs.setBool('notifyOnIdle', notifyOnIdle);
+    await prefs.setInt('idleThresholdSeconds', idleThresholdSeconds);
+    await prefs.setBool('wakeLock', wakeLock);
+    await prefs.setBool('autoReconnect', autoReconnect);
+  }
 }
+
+final initialPreferencesProvider = Provider<AppPreferences?>((_) => null);
 
 class PreferencesNotifier extends Notifier<AppPreferences> {
   @override
-  AppPreferences build() => const AppPreferences();
+  AppPreferences build() =>
+      ref.read(initialPreferencesProvider) ?? const AppPreferences();
 
-  void setTheme(String name) => state = state.copyWith(themeName: name);
-  void setFontSize(double size) => state = state.copyWith(fontSize: size);
-  void setHaptics(bool enabled) => state = state.copyWith(haptics: enabled);
-  void setNotifyOnIdle(bool enabled) =>
-      state = state.copyWith(notifyOnIdle: enabled);
-  void setIdleThreshold(int seconds) =>
-      state = state.copyWith(idleThresholdSeconds: seconds);
-  void setWakeLock(bool enabled) => state = state.copyWith(wakeLock: enabled);
-  void setAutoReconnect(bool enabled) =>
-      state = state.copyWith(autoReconnect: enabled);
+  void setTheme(String name) {
+    state = state.copyWith(themeName: name);
+    state.saveToDisk();
+  }
+
+  void setFontSize(double size) {
+    state = state.copyWith(fontSize: size);
+    state.saveToDisk();
+  }
+
+  void setHaptics(bool enabled) {
+    state = state.copyWith(haptics: enabled);
+    state.saveToDisk();
+  }
+
+  void setNotifyOnIdle(bool enabled) {
+    state = state.copyWith(notifyOnIdle: enabled);
+    state.saveToDisk();
+  }
+
+  void setIdleThreshold(int seconds) {
+    state = state.copyWith(idleThresholdSeconds: seconds);
+    state.saveToDisk();
+  }
+
+  void setWakeLock(bool enabled) {
+    state = state.copyWith(wakeLock: enabled);
+    state.saveToDisk();
+  }
+
+  void setAutoReconnect(bool enabled) {
+    state = state.copyWith(autoReconnect: enabled);
+    state.saveToDisk();
+  }
 }
 
 final preferencesProvider =

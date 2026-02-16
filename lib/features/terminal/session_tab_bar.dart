@@ -2,23 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/models/session.dart';
-import '../../core/models/connection_state.dart';
 import '../../core/providers.dart';
 
 class SessionTabBar extends ConsumerWidget {
   final VoidCallback onNewSession;
 
   const SessionTabBar({super.key, required this.onNewSession});
-
-  Color _stateColor(SshConnectionState state) => switch (state) {
-        SshConnectionState.connected => Colors.green,
-        SshConnectionState.reconnecting ||
-        SshConnectionState.connecting ||
-        SshConnectionState.authenticating ||
-        SshConnectionState.startingShell =>
-          Colors.amber,
-        _ => Colors.redAccent,
-      };
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -49,7 +38,7 @@ class SessionTabBar extends ConsumerWidget {
                 return _SessionTab(
                   session: session,
                   isActive: isActive,
-                  stateColor: _stateColor(session.state),
+                  stateColor: session.state.statusColor,
                   onTap: () {
                     HapticFeedback.selectionClick();
                     ref.read(activeSessionIdProvider.notifier).state =

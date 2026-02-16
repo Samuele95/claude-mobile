@@ -31,6 +31,8 @@ android {
 
     buildTypes {
         release {
+            // TODO: Configure a proper release keystore before Play Store distribution.
+            // Using debug signing is fine for GitHub releases / sideloading.
             signingConfig = signingConfigs.getByName("debug")
         }
     }

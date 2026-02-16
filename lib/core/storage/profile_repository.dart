@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/server_profile.dart';
 
@@ -14,10 +15,24 @@ class ProfileRepository {
   Future<List<ServerProfile>> getAll() async {
     final raw = await _storage.read(key: _profilesKey);
     if (raw == null) return [];
-    final list = jsonDecode(raw) as List<dynamic>;
-    return list
-        .map((e) => ServerProfile.fromJson(e as Map<String, dynamic>))
-        .toList();
+
+    final List<dynamic> list;
+    try {
+      list = jsonDecode(raw) as List<dynamic>;
+    } catch (err) {
+      developer.log('Corrupted profiles JSON, resetting: $err', name: 'ProfileRepository');
+      return [];
+    }
+
+    final profiles = <ServerProfile>[];
+    for (final e in list) {
+      try {
+        profiles.add(ServerProfile.fromJson(e as Map<String, dynamic>));
+      } catch (err) {
+        developer.log('Skipping corrupted profile: $err', name: 'ProfileRepository');
+      }
+    }
+    return profiles;
   }
 
   Future<void> save(ServerProfile profile) async {

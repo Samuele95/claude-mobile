@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../../core/utils/format_utils.dart';
 import 'file_item_tile.dart';
 
 class LocalBrowser extends StatefulWidget {
@@ -14,6 +15,7 @@ class _LocalBrowserState extends State<LocalBrowser> {
   List<FileSystemEntity> _entries = [];
   bool _loading = true;
   String? _error;
+  int _loadGeneration = 0;
 
   @override
   void initState() {
@@ -22,6 +24,7 @@ class _LocalBrowserState extends State<LocalBrowser> {
   }
 
   Future<void> _loadDirectory() async {
+    final generation = ++_loadGeneration;
     setState(() {
       _loading = true;
       _error = null;
@@ -37,11 +40,13 @@ class _LocalBrowserState extends State<LocalBrowser> {
         if (!aIsDir && bIsDir) return 1;
         return a.path.split('/').last.compareTo(b.path.split('/').last);
       });
+      if (!mounted || generation != _loadGeneration) return;
       setState(() {
         _entries = entities;
         _loading = false;
       });
     } catch (e) {
+      if (!mounted || generation != _loadGeneration) return;
       setState(() {
         _error = e.toString();
         _loading = false;
@@ -61,12 +66,6 @@ class _LocalBrowserState extends State<LocalBrowser> {
   }
 
   String _fileName(FileSystemEntity entity) => entity.path.split('/').last;
-
-  String _formatSize(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -120,7 +119,7 @@ class _LocalBrowserState extends State<LocalBrowser> {
                             isDirectory: isDir,
                             subtitle: isDir
                                 ? null
-                                : _formatSize((entity as File).lengthSync()),
+                                : formatFileSize((entity as File).lengthSync()),
                             onTap: isDir
                                 ? () => _navigate(entity.path)
                                 : () {},
