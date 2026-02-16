@@ -5,6 +5,7 @@ import 'models/session.dart';
 import 'models/transfer_item.dart';
 import 'storage/profile_repository.dart';
 import 'storage/key_manager.dart';
+import 'storage/host_key_store.dart';
 import 'ssh/ssh_service.dart';
 import 'ssh/sftp_service.dart';
 import 'ssh/connection_manager.dart';
@@ -24,10 +25,17 @@ final profileRepositoryProvider = Provider<ProfileRepository>(
   (ref) => ProfileRepository(storage: ref.watch(secureStorageProvider)),
 );
 
+final hostKeyStoreProvider = Provider<HostKeyStore>(
+  (ref) => HostKeyStore(storage: ref.watch(secureStorageProvider)),
+);
+
 // --- Connection Manager (replaces singleton ssh/sftp) ---
 
 final connectionManagerProvider = Provider<ConnectionManager>((ref) {
-  final manager = ConnectionManager(keyManager: ref.watch(keyManagerProvider));
+  final manager = ConnectionManager(
+    keyManager: ref.watch(keyManagerProvider),
+    hostKeyStore: ref.watch(hostKeyStoreProvider),
+  );
   ref.onDispose(() => manager.dispose());
   return manager;
 });
@@ -53,7 +61,7 @@ final sessionSftpProvider = Provider.family<SftpService?, String>((ref, id) {
 
 final sessionTerminalControllerProvider =
     Provider.family<SshTerminalController?, String>((ref, id) {
-  final ssh = ref.watch(connectionManagerProvider).getSsh(id);
+  final ssh = ref.read(connectionManagerProvider).getSsh(id);
   if (ssh == null) return null;
   final controller = SshTerminalController(ssh: ssh);
   ref.onDispose(() => controller.dispose());
@@ -79,9 +87,19 @@ class ProfilesNotifier extends AsyncNotifier<List<ServerProfile>> {
 
   Future<void> remove(String id) async {
     await ref.read(profileRepositoryProvider).delete(id);
+    // Clean up orphaned password and key entries
+    final storage = ref.read(secureStorageProvider);
+    await storage.delete(key: 'password_$id');
+    await storage.delete(key: 'profile_key_$id');
     state = AsyncData(await ref.read(profileRepositoryProvider).getAll());
   }
 }
+
+// --- SSH Public Key (cached) ---
+
+final appPublicKeyProvider = FutureProvider<String>((ref) {
+  return ref.watch(keyManagerProvider).getOrCreateAppKeyPair();
+});
 
 // --- Transfer State ---
 

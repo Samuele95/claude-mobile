@@ -3,25 +3,32 @@ import '../models/session.dart';
 import '../models/server_profile.dart';
 import '../models/connection_state.dart';
 import '../storage/key_manager.dart';
+import '../storage/host_key_store.dart';
 import '../utils/command_builder.dart';
 import 'ssh_service.dart';
 import 'sftp_service.dart';
 
 class ConnectionManager {
   final KeyManager _keyManager;
+  final HostKeyStore? _hostKeyStore;
   final Map<String, SshService> _sshServices = {};
   final Map<String, SftpService> _sftpServices = {};
   final Map<String, Session> _sessions = {};
   final Map<String, StreamSubscription> _stateSubscriptions = {};
   bool _creatingSession = false;
+  bool _disposed = false;
 
   final _sessionsController = StreamController<List<Session>>.broadcast();
 
   Stream<List<Session>> get sessionsStream => _sessionsController.stream;
   List<Session> get sessions => _sessions.values.toList();
 
-  ConnectionManager({required KeyManager keyManager})
-      : _keyManager = keyManager;
+  ConnectionManager({required KeyManager keyManager, HostKeyStore? hostKeyStore})
+      : _keyManager = keyManager,
+        _hostKeyStore = hostKeyStore {
+    // Emit initial empty list so StreamProvider starts with data, not loading state
+    _sessionsController.add([]);
+  }
 
   SshService? getSsh(String sessionId) => _sshServices[sessionId];
   SftpService? getSftp(String sessionId) => _sftpServices[sessionId];
@@ -29,6 +36,8 @@ class ConnectionManager {
   Future<String> createSession(
     ServerProfile profile, {
     String? password,
+    PasswordProvider? passwordProvider,
+    bool autoReconnect = true,
   }) async {
     // Guard against concurrent session creation (e.g. double-tap)
     if (_creatingSession) {
@@ -38,10 +47,10 @@ class ConnectionManager {
 
     final sessionId = DateTime.now().millisecondsSinceEpoch.toString();
     try {
-      final ssh = SshService(keyManager: _keyManager);
+      final ssh = SshService(keyManager: _keyManager, hostKeyStore: _hostKeyStore);
       final sftp = SftpService();
 
-      ssh.autoReconnect = true;
+      ssh.autoReconnect = autoReconnect;
       _sshServices[sessionId] = ssh;
       _sftpServices[sessionId] = sftp;
 
@@ -63,7 +72,11 @@ class ConnectionManager {
         }
       });
 
-      await ssh.connect(profile, password: password);
+      await ssh.connect(
+        profile,
+        password: password,
+        passwordProvider: passwordProvider,
+      );
 
       // Run startup command — longer delay ensures shell fully initializes
       // (login profile, MOTD, etc.) before we send the claude command.
@@ -73,9 +86,12 @@ class ConnectionManager {
         ssh.write('$startupCmd\n');
       }
 
-      // Initialize SFTP
-      if (ssh.client != null) {
-        await sftp.initialize(ssh.client!);
+      // Initialize SFTP — allow session to survive even if SFTP fails
+      try {
+        final sftpClient = await ssh.openSftp();
+        sftp.initializeWithClient(sftpClient);
+      } catch (_) {
+        // SFTP unavailable; session continues without file management
       }
 
       return sessionId;
@@ -106,16 +122,22 @@ class ConnectionManager {
 
     // Re-initialize SFTP after reconnect
     final sftp = _sftpServices[sessionId];
-    if (sftp != null && ssh.client != null) {
-      await sftp.initialize(ssh.client!);
+    if (sftp != null) {
+      try {
+        final sftpClient = await ssh.openSftp();
+        sftp.initializeWithClient(sftpClient);
+      } catch (_) {
+        // SFTP unavailable after reconnect; file panel will show error
+      }
     }
   }
 
   void _emitSessions() {
-    _sessionsController.add(_sessions.values.toList());
+    if (!_disposed) _sessionsController.add(_sessions.values.toList());
   }
 
   Future<void> dispose() async {
+    _disposed = true;
     for (final sub in _stateSubscriptions.values) {
       await sub.cancel();
     }

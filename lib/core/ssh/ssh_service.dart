@@ -5,15 +5,34 @@ import 'package:dartssh2/dartssh2.dart';
 import '../models/server_profile.dart';
 import '../models/connection_state.dart';
 import '../storage/key_manager.dart';
+import '../storage/host_key_store.dart';
+
+/// Callback that retrieves the password on-demand from secure storage.
+/// This avoids caching plaintext passwords in memory for the session lifetime.
+typedef PasswordProvider = Future<String?> Function();
+
+/// Exception thrown when a host key mismatch is detected (possible MITM).
+class HostKeyMismatchException implements Exception {
+  final String host;
+  final int port;
+  HostKeyMismatchException(this.host, this.port);
+
+  @override
+  String toString() =>
+      'Host key for $host:$port has changed! This could indicate a '
+      'man-in-the-middle attack. If you trust this change, delete the server '
+      'and re-add it.';
+}
 
 class SshService {
   final KeyManager _keyManager;
+  final HostKeyStore? _hostKeyStore;
 
   SSHClient? _client;
   SSHSession? _shell;
   SshConnectionState _state = SshConnectionState.disconnected;
   ServerProfile? _activeProfile;
-  String? _password;
+  PasswordProvider? _passwordProvider;
   int _lastWidth = 80;
   int _lastHeight = 24;
 
@@ -21,7 +40,7 @@ class SshService {
   StreamSubscription? _stderrSub;
 
   bool _disposed = false;
-  bool autoReconnect = false;
+  bool _autoReconnect = false;
   int _reconnectAttempts = 0;
   Timer? _reconnectTimer;
   static const _maxReconnectAttempts = 5;
@@ -32,12 +51,20 @@ class SshService {
   Stream<SshConnectionState> get stateStream => _stateController.stream;
   Stream<Uint8List> get outputStream => _outputController.stream;
   SshConnectionState get state => _state;
-  SSHClient? get client => _client;
+  bool get autoReconnect => _autoReconnect;
   ServerProfile? get activeProfile => _activeProfile;
 
-  SshService({required KeyManager keyManager}) : _keyManager = keyManager;
+  set autoReconnect(bool value) {
+    _autoReconnect = value;
+    if (!value) _reconnectAttempts = 0;
+  }
+
+  SshService({required KeyManager keyManager, HostKeyStore? hostKeyStore})
+      : _keyManager = keyManager,
+        _hostKeyStore = hostKeyStore;
 
   void _setState(SshConnectionState newState) {
+    if (_disposed) return;
     _state = newState;
     _stateController.add(newState);
   }
@@ -45,6 +72,7 @@ class SshService {
   Future<void> connect(
     ServerProfile profile, {
     String? password,
+    PasswordProvider? passwordProvider,
     int initialWidth = 80,
     int initialHeight = 24,
   }) async {
@@ -57,7 +85,7 @@ class SshService {
     _stderrSub = null;
 
     _activeProfile = profile;
-    _password = password;
+    if (passwordProvider != null) _passwordProvider = passwordProvider;
     _lastWidth = initialWidth;
     _lastHeight = initialHeight;
     _reconnectAttempts = 0;
@@ -103,11 +131,26 @@ class SshService {
       timeout: const Duration(seconds: 10),
     );
 
+    Future<bool> verifyHostKey(String type, Uint8List fingerprint) async {
+      if (_hostKeyStore == null) return true;
+      final result = await _hostKeyStore.verify(
+        profile.host,
+        profile.port,
+        type,
+        fingerprint,
+      );
+      if (result == HostKeyVerifyResult.mismatch) {
+        return false;
+      }
+      return true; // trusted (first time) or matched
+    }
+
     if (profile.authMethod == AuthMethod.password && password != null) {
       return SSHClient(
         socket,
         username: profile.username,
         onPasswordRequest: () => password,
+        onVerifyHostKey: verifyHostKey,
         keepAliveInterval: const Duration(seconds: 30),
       );
     }
@@ -117,6 +160,7 @@ class SshService {
       socket,
       username: profile.username,
       identities: keyPairs,
+      onVerifyHostKey: verifyHostKey,
       keepAliveInterval: const Duration(seconds: 30),
     );
   }
@@ -151,20 +195,29 @@ class SshService {
     }
   }
 
+  /// Opens an SFTP session on the current SSH connection.
+  /// Throws StateError if not connected.
+  Future<SftpClient> openSftp() async {
+    if (_client == null) throw StateError('Not connected');
+    return _client!.sftp();
+  }
+
   Future<void> reconnect() async {
     if (_disposed || _activeProfile == null) return;
-    final wasAutoReconnect = autoReconnect;
+    final wasAutoReconnect = _autoReconnect;
     _setState(SshConnectionState.reconnecting);
     try {
+      // Fetch password on-demand from secure storage via callback
+      final password = await _passwordProvider?.call();
       await connect(
         _activeProfile!,
-        password: _password,
+        password: password,
         initialWidth: _lastWidth,
         initialHeight: _lastHeight,
       );
-      autoReconnect = wasAutoReconnect;
+      _autoReconnect = wasAutoReconnect;
     } catch (_) {
-      autoReconnect = wasAutoReconnect;
+      _autoReconnect = wasAutoReconnect;
       _setState(SshConnectionState.error);
     }
   }
@@ -173,13 +226,13 @@ class SshService {
     if (_state == SshConnectionState.disconnected) return;
     _setState(SshConnectionState.disconnected);
 
-    if (autoReconnect && _reconnectAttempts < _maxReconnectAttempts) {
+    if (_autoReconnect && _reconnectAttempts < _maxReconnectAttempts) {
       final delay = Duration(
           seconds: 1 << _reconnectAttempts); // 1s, 2s, 4s, 8s, 16s
       _reconnectAttempts++;
       _reconnectTimer?.cancel();
       _reconnectTimer = Timer(delay, () async {
-        if (!_disposed && autoReconnect) {
+        if (!_disposed && _autoReconnect) {
           await reconnect();
         }
       });
@@ -187,7 +240,7 @@ class SshService {
   }
 
   Future<void> disconnect() async {
-    autoReconnect = false;
+    _autoReconnect = false;
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
     await _stdoutSub?.cancel();

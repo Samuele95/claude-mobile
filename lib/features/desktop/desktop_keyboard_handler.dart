@@ -9,6 +9,7 @@ class DesktopKeyboardHandler extends StatelessWidget {
   final VoidCallback onPreviousSession;
   final VoidCallback onToggleFilePanel;
   final VoidCallback onCommandPalette;
+  final VoidCallback? onShowShortcuts;
 
   const DesktopKeyboardHandler({
     super.key,
@@ -19,6 +20,7 @@ class DesktopKeyboardHandler extends StatelessWidget {
     required this.onPreviousSession,
     required this.onToggleFilePanel,
     required this.onCommandPalette,
+    this.onShowShortcuts,
   });
 
   @override
@@ -54,6 +56,11 @@ class DesktopKeyboardHandler extends StatelessWidget {
           LogicalKeyboardKey.shift,
           LogicalKeyboardKey.keyK,
         ): const _CommandPaletteIntent(),
+        LogicalKeySet(
+          LogicalKeyboardKey.control,
+          LogicalKeyboardKey.shift,
+          LogicalKeyboardKey.slash,
+        ): const _ShowShortcutsIntent(),
       },
       child: Actions(
         actions: {
@@ -93,6 +100,12 @@ class DesktopKeyboardHandler extends StatelessWidget {
               return null;
             },
           ),
+          _ShowShortcutsIntent: CallbackAction<_ShowShortcutsIntent>(
+            onInvoke: (_) {
+              onShowShortcuts?.call();
+              return null;
+            },
+          ),
         },
         child: Focus(
           autofocus: true,
@@ -126,3 +139,18 @@ class _ToggleFilePanelIntent extends Intent {
 class _CommandPaletteIntent extends Intent {
   const _CommandPaletteIntent();
 }
+
+class _ShowShortcutsIntent extends Intent {
+  const _ShowShortcutsIntent();
+}
+
+/// Static list of keyboard shortcuts for display in help dialogs.
+const keyboardShortcuts = [
+  ('Ctrl+Shift+T', 'New session'),
+  ('Ctrl+Shift+W', 'Close session'),
+  ('Ctrl+Tab', 'Next session'),
+  ('Ctrl+Shift+Tab', 'Previous session'),
+  ('Ctrl+Shift+B', 'Toggle file panel'),
+  ('Ctrl+Shift+K', 'Command palette'),
+  ('Ctrl+Shift+/', 'Keyboard shortcuts'),
+];

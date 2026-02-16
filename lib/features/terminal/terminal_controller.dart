@@ -5,12 +5,12 @@ import 'package:xterm/xterm.dart';
 import '../../core/ssh/ssh_service.dart';
 
 class SshTerminalController {
-  static const _ansiArrowUp    = [27, 91, 65];
-  static const _ansiArrowDown  = [27, 91, 66];
-  static const _ansiArrowRight = [27, 91, 67];
-  static const _ansiArrowLeft  = [27, 91, 68];
-  static const _ansiTab        = [9];
-  static const _ansiEscape     = [27];
+  static final _ansiArrowUp    = Uint8List.fromList([27, 91, 65]);
+  static final _ansiArrowDown  = Uint8List.fromList([27, 91, 66]);
+  static final _ansiArrowRight = Uint8List.fromList([27, 91, 67]);
+  static final _ansiArrowLeft  = Uint8List.fromList([27, 91, 68]);
+  static final _ansiTab        = Uint8List.fromList([9]);
+  static final _ansiEscape     = Uint8List.fromList([27]);
 
   final Terminal terminal;
   final SshService _ssh;
@@ -36,17 +36,17 @@ class SshTerminalController {
   void sendKey(TerminalKey key) {
     switch (key) {
       case TerminalKey.arrowUp:
-        _ssh.writeBytes(Uint8List.fromList(_ansiArrowUp));
+        _ssh.writeBytes(_ansiArrowUp);
       case TerminalKey.arrowDown:
-        _ssh.writeBytes(Uint8List.fromList(_ansiArrowDown));
+        _ssh.writeBytes(_ansiArrowDown);
       case TerminalKey.arrowRight:
-        _ssh.writeBytes(Uint8List.fromList(_ansiArrowRight));
+        _ssh.writeBytes(_ansiArrowRight);
       case TerminalKey.arrowLeft:
-        _ssh.writeBytes(Uint8List.fromList(_ansiArrowLeft));
+        _ssh.writeBytes(_ansiArrowLeft);
       case TerminalKey.tab:
-        _ssh.writeBytes(Uint8List.fromList(_ansiTab));
+        _ssh.writeBytes(_ansiTab);
       case TerminalKey.escape:
-        _ssh.writeBytes(Uint8List.fromList(_ansiEscape));
+        _ssh.writeBytes(_ansiEscape);
       default:
         break;
     }

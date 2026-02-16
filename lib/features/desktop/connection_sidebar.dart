@@ -4,6 +4,7 @@ import '../../core/models/server_profile.dart';
 import '../../core/models/session.dart';
 import '../../core/providers.dart';
 import '../../core/utils/dialogs.dart';
+import '../../core/utils/session_actions.dart';
 import '../connection/add_server_sheet.dart';
 import '../connection/key_display.dart';
 import '../settings/settings_screen.dart';
@@ -17,24 +18,14 @@ class ConnectionSidebar extends ConsumerStatefulWidget {
 }
 
 class _ConnectionSidebarState extends ConsumerState<ConnectionSidebar> {
-  bool _connecting = false;
+  String? _connectingProfileId;
 
   Future<void> _connect(ServerProfile profile) async {
-    if (_connecting) return;
-    setState(() => _connecting = true);
+    if (_connectingProfileId != null) return;
+    setState(() => _connectingProfileId = profile.id);
 
     try {
-      final manager = ref.read(connectionManagerProvider);
-      final storage = ref.read(secureStorageProvider);
-
-      String? password;
-      if (profile.authMethod == AuthMethod.password) {
-        password = await storage.read(key: 'password_${profile.id}');
-      }
-
-      final sessionId =
-          await manager.createSession(profile, password: password);
-      ref.read(activeSessionIdProvider.notifier).state = sessionId;
+      await connectToProfile(ref, profile);
     } catch (e) {
       if (mounted) {
         showErrorDialog(
@@ -45,7 +36,7 @@ class _ConnectionSidebarState extends ConsumerState<ConnectionSidebar> {
         );
       }
     } finally {
-      if (mounted) setState(() => _connecting = false);
+      if (mounted) setState(() => _connectingProfileId = null);
     }
   }
 
@@ -100,8 +91,15 @@ class _ConnectionSidebarState extends ConsumerState<ConnectionSidebar> {
                 const Spacer(),
                 IconButton(
                   icon: const Icon(Icons.info_outline_rounded, size: 20),
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const AboutScreen()),
+                  onPressed: () => showDialog(
+                    context: context,
+                    builder: (_) => Dialog(
+                      child: ConstrainedBox(
+                        constraints:
+                            const BoxConstraints(maxWidth: 480, maxHeight: 520),
+                        child: const AboutScreen(),
+                      ),
+                    ),
                   ),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
@@ -109,8 +107,15 @@ class _ConnectionSidebarState extends ConsumerState<ConnectionSidebar> {
                 const SizedBox(width: 4),
                 IconButton(
                   icon: const Icon(Icons.settings_outlined, size: 20),
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                  onPressed: () => showDialog(
+                    context: context,
+                    builder: (_) => Dialog(
+                      child: ConstrainedBox(
+                        constraints:
+                            const BoxConstraints(maxWidth: 480, maxHeight: 600),
+                        child: const SettingsScreen(),
+                      ),
+                    ),
                   ),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
@@ -179,7 +184,7 @@ class _ConnectionSidebarState extends ConsumerState<ConnectionSidebar> {
                   else
                     ...list.map((profile) => _CompactProfileTile(
                           profile: profile,
-                          connecting: _connecting,
+                          connecting: _connectingProfileId == profile.id,
                           onTap: () => _connect(profile),
                           onEdit: () => _showEditDialog(profile),
                           onDelete: () async {

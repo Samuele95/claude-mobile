@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../core/utils/platform_utils.dart';
 
 class CommandPalette extends StatefulWidget {
   final void Function(String command) onSelect;
@@ -144,7 +145,7 @@ class _CommandPaletteState extends State<CommandPalette> {
                   ),
                   subtitle: Text(cmd.description),
                   onTap: () {
-                    HapticFeedback.lightImpact();
+                    if (isMobile) HapticFeedback.lightImpact();
                     Navigator.of(context).pop();
                     widget.onSelect(cmd.command);
                   },

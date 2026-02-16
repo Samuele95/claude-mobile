@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xterm/xterm.dart';
+import '../../core/models/connection_state.dart';
 import '../../core/providers.dart';
 import '../../core/utils/desktop_window.dart';
-import '../../core/utils/dialogs.dart';
-import '../../theme/terminal_theme.dart';
+import '../../core/utils/session_actions.dart';
 import '../files/file_panel.dart';
 import '../settings/preferences_provider.dart';
 import '../terminal/command_palette.dart';
@@ -46,23 +46,7 @@ class _DesktopShellState extends ConsumerState<DesktopShell>
   void _closeCurrentSession() async {
     final activeId = ref.read(activeSessionIdProvider);
     if (activeId == null) return;
-
-    final confirmed = await showConfirmDialog(
-      context,
-      title: 'Disconnect',
-      message: 'Are you sure you want to disconnect this session?',
-      confirmLabel: 'Disconnect',
-      destructive: true,
-    );
-    if (!confirmed) return;
-
-    await ref.read(connectionManagerProvider).closeSession(activeId);
-    final remaining = ref.read(sessionsProvider).valueOrNull ?? [];
-    if (remaining.isEmpty) {
-      ref.read(activeSessionIdProvider.notifier).state = null;
-    } else {
-      ref.read(activeSessionIdProvider.notifier).state = remaining.first.id;
-    }
+    await closeSessionWithConfirm(context, ref, activeId);
   }
 
   void _nextSession() {
@@ -83,6 +67,60 @@ class _DesktopShellState extends ConsumerState<DesktopShell>
     final idx = sessions.indexWhere((s) => s.id == activeId);
     final prev = (idx - 1 + sessions.length) % sessions.length;
     ref.read(activeSessionIdProvider.notifier).state = sessions[prev].id;
+  }
+
+  void _showShortcutsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Keyboard Shortcuts'),
+        content: SizedBox(
+          width: 340,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final (shortcut, description) in keyboardShortcuts)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          description,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          shortcut,
+                          style: const TextStyle(
+                            fontFamily: 'JetBrainsMono',
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showCommandPalette() {
@@ -107,6 +145,9 @@ class _DesktopShellState extends ConsumerState<DesktopShell>
   @override
   Widget build(BuildContext context) {
     final activeId = ref.watch(activeSessionIdProvider);
+    final sessions = ref.watch(sessionsProvider).valueOrNull ?? [];
+    final activeSession =
+        sessions.where((s) => s.id == activeId).firstOrNull;
     final prefs = ref.watch(preferencesProvider);
     final controller = activeId != null
         ? ref.watch(sessionTerminalControllerProvider(activeId))
@@ -124,6 +165,7 @@ class _DesktopShellState extends ConsumerState<DesktopShell>
         setState(() => _showFilePanel = !_showFilePanel);
       },
       onCommandPalette: _showCommandPalette,
+      onShowShortcuts: () => _showShortcutsDialog(context),
       child: Scaffold(
         body: Row(
           children: [
@@ -144,14 +186,22 @@ class _DesktopShellState extends ConsumerState<DesktopShell>
                       ref.read(activeSessionIdProvider.notifier).state = null;
                     },
                   ),
+                  if (activeSession != null &&
+                      (activeSession.state == SshConnectionState.disconnected ||
+                          activeSession.state == SshConnectionState.error))
+                    _DesktopReconnectBanner(
+                      state: activeSession.state,
+                      onReconnect: () => ref
+                          .read(connectionManagerProvider)
+                          .reconnectSession(activeSession.id),
+                    ),
                   Expanded(
                     child: controller != null
                         ? TerminalView(
                             controller.terminal,
                             readOnly: false,
                             hardwareKeyboardOnly: false,
-                            theme: AppTerminalThemes.fromPreferences(
-                                prefs.themeName),
+                            theme: prefs.theme.terminalTheme,
                             textStyle: TerminalStyle(
                               fontSize: prefs.fontSize,
                               fontFamily: 'JetBrainsMono',
@@ -212,6 +262,52 @@ class _DesktopShellState extends ConsumerState<DesktopShell>
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _DesktopReconnectBanner extends StatelessWidget {
+  final SshConnectionState state;
+  final VoidCallback onReconnect;
+
+  const _DesktopReconnectBanner({
+    required this.state,
+    required this.onReconnect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isError = state == SshConnectionState.error;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      color: (isError ? Colors.redAccent : Colors.amber).withValues(alpha: 0.12),
+      child: Row(
+        children: [
+          Icon(
+            isError ? Icons.error_outline : Icons.wifi_off,
+            size: 16,
+            color: isError ? Colors.redAccent : Colors.amber,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            isError ? 'Connection error' : 'Disconnected',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const Spacer(),
+          TextButton.icon(
+            onPressed: onReconnect,
+            icon: const Icon(Icons.refresh, size: 14),
+            label: const Text('Reconnect'),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              minimumSize: const Size(0, 28),
+              textStyle: const TextStyle(fontSize: 12),
+            ),
+          ),
+        ],
       ),
     );
   }

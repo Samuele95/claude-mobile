@@ -42,7 +42,7 @@ Future<void> showErrorDialog(
     context: context,
     builder: (context) => AlertDialog(
       title: Text(title),
-      content: Text(_friendlyError(error)),
+      content: Text(friendlyError(error)),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
@@ -61,8 +61,13 @@ Future<void> showErrorDialog(
   );
 }
 
-String _friendlyError(Object error) {
+String friendlyError(Object error) {
   final msg = error.toString();
+  if (msg.contains('Host key') && msg.contains('changed')) {
+    return 'WARNING: Remote host key has changed! This could indicate a '
+        'man-in-the-middle attack, or the server was reinstalled. '
+        'Delete the server profile and re-add it if you trust this change.';
+  }
   if (error is SocketException || msg.contains('SocketException')) {
     return 'Could not reach server. Check the host address and your network connection.';
   }

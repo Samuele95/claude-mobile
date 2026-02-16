@@ -9,8 +9,7 @@ import '../../core/models/connection_state.dart';
 import '../../core/models/server_profile.dart';
 import '../../core/models/session.dart';
 import '../../core/models/transfer_item.dart';
-import '../../core/utils/dialogs.dart';
-import '../../theme/terminal_theme.dart';
+import '../../core/utils/session_actions.dart';
 import '../files/file_panel.dart';
 import '../settings/settings_screen.dart';
 import '../settings/about_screen.dart';
@@ -214,22 +213,7 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
   }
 
   Future<void> _disconnectSession(String sessionId) async {
-    final confirmed = await showConfirmDialog(
-      context,
-      title: 'Disconnect',
-      message: 'Are you sure you want to disconnect this session?',
-      confirmLabel: 'Disconnect',
-      destructive: true,
-    );
-    if (!confirmed) return;
-
-    await ref.read(connectionManagerProvider).closeSession(sessionId);
-    final remaining = ref.read(sessionsProvider).valueOrNull ?? [];
-    if (remaining.isEmpty) {
-      ref.read(activeSessionIdProvider.notifier).state = null;
-    } else {
-      ref.read(activeSessionIdProvider.notifier).state = remaining.first.id;
-    }
+    await closeSessionWithConfirm(context, ref, sessionId);
   }
 
   @override
@@ -238,14 +222,16 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
     final activeId = ref.watch(activeSessionIdProvider);
     final prefs = ref.watch(preferencesProvider);
 
-    // Find the active session
-    Session? activeSession;
-    for (final s in sessions) {
-      if (s.id == activeId) {
-        activeSession = s;
-        break;
-      }
+    // Toggle wake lock at runtime when the preference changes
+    if (isMobile) {
+      ref.listen<AppPreferences>(preferencesProvider, (prev, next) {
+        if (prev?.wakeLock != next.wakeLock) {
+          next.wakeLock ? WakelockPlus.enable() : WakelockPlus.disable();
+        }
+      });
     }
+
+    final activeSession = sessions.where((s) => s.id == activeId).firstOrNull;
 
     final controller = activeId != null
         ? ref.watch(sessionTerminalControllerProvider(activeId))
@@ -274,7 +260,7 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
               _ConnectionPill(
                 state: activeSession.state,
                 profile: activeSession.profile,
-                onDisconnect: () => _disconnectSession(activeSession!.id),
+                onDisconnect: () => _disconnectSession(activeSession.id),
                 onFilePanel: () {
                   _scaffoldKey.currentState?.openEndDrawer();
                 },
@@ -287,7 +273,16 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
                       builder: (_) => const AboutScreen()),
                 ),
                 onConnectionInfo: () =>
-                    _showConnectionInfo(activeSession!),
+                    _showConnectionInfo(activeSession),
+              ),
+            if (activeSession != null &&
+                (activeSession.state == SshConnectionState.disconnected ||
+                    activeSession.state == SshConnectionState.error))
+              _ReconnectBanner(
+                state: activeSession.state,
+                onReconnect: () => ref
+                    .read(connectionManagerProvider)
+                    .reconnectSession(activeSession.id),
               ),
             Expanded(
               child: controller != null
@@ -295,8 +290,7 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
                       controller.terminal,
                       readOnly: isMobile,
                       hardwareKeyboardOnly: isMobile,
-                      theme: AppTerminalThemes.fromPreferences(
-                          prefs.themeName),
+                      theme: prefs.theme.terminalTheme,
                       textStyle: TerminalStyle(
                         fontSize: prefs.fontSize,
                         fontFamily: 'JetBrainsMono',
@@ -456,6 +450,57 @@ class _ConnectionPill extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReconnectBanner extends StatelessWidget {
+  final SshConnectionState state;
+  final VoidCallback onReconnect;
+
+  const _ReconnectBanner({
+    required this.state,
+    required this.onReconnect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isError = state == SshConnectionState.error;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: (isError ? Colors.redAccent : Colors.amber).withValues(alpha: 0.15),
+      child: Row(
+        children: [
+          Icon(
+            isError ? Icons.error_outline : Icons.wifi_off,
+            size: 18,
+            color: isError ? Colors.redAccent : Colors.amber,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              isError
+                  ? 'Connection error'
+                  : 'Disconnected',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurface,
+                  ),
+            ),
+          ),
+          TextButton.icon(
+            onPressed: onReconnect,
+            icon: const Icon(Icons.refresh, size: 16),
+            label: const Text('Reconnect'),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              minimumSize: const Size(0, 32),
+            ),
           ),
         ],
       ),

@@ -23,7 +23,7 @@ class SettingsScreen extends ConsumerWidget {
             _SectionHeader('Appearance'),
             ListTile(
               title: const Text('Theme'),
-              subtitle: Text(prefs.themeName),
+              subtitle: Text(prefs.theme.displayName),
               leading: const Icon(Icons.palette_outlined),
               onTap: () => _showThemePicker(context, ref),
             ),
@@ -74,17 +74,6 @@ class SettingsScreen extends ConsumerWidget {
                 onChanged: (v) =>
                     ref.read(preferencesProvider.notifier).setHaptics(v),
               ),
-              const Divider(),
-              _SectionHeader('Notifications'),
-              SwitchListTile(
-                title: const Text('Task completion'),
-                subtitle:
-                    const Text('Notify when Claude goes idle after activity'),
-                secondary: const Icon(Icons.notifications_outlined),
-                value: prefs.notifyOnIdle,
-                onChanged: (v) =>
-                    ref.read(preferencesProvider.notifier).setNotifyOnIdle(v),
-              ),
             ],
           ],
         ),
@@ -98,9 +87,9 @@ class SettingsScreen extends ConsumerWidget {
       builder: (_) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          for (final theme in ['dark', 'amoled', 'light'])
+          for (final theme in AppThemeName.values)
             ListTile(
-              title: Text(theme[0].toUpperCase() + theme.substring(1)),
+              title: Text(theme.displayName),
               onTap: () {
                 ref.read(preferencesProvider.notifier).setTheme(theme);
                 Navigator.pop(context);

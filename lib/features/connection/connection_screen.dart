@@ -5,6 +5,8 @@ import '../../core/models/server_profile.dart';
 import '../../core/models/session.dart';
 import '../../core/providers.dart';
 import '../../core/utils/dialogs.dart';
+import '../../core/utils/platform_utils.dart';
+import '../../core/utils/session_actions.dart';
 import '../settings/settings_screen.dart';
 import '../settings/about_screen.dart';
 import '../settings/preferences_provider.dart';
@@ -19,27 +21,17 @@ class ConnectionScreen extends ConsumerStatefulWidget {
 }
 
 class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
-  bool _connecting = false;
+  String? _connectingProfileId;
 
   Future<void> _connect(ServerProfile profile) async {
-    if (_connecting) return;
-    setState(() => _connecting = true);
+    if (_connectingProfileId != null) return;
+    setState(() => _connectingProfileId = profile.id);
 
     try {
-      final manager = ref.read(connectionManagerProvider);
-      final storage = ref.read(secureStorageProvider);
       final prefs = ref.read(preferencesProvider);
+      if (isMobile && prefs.haptics) HapticFeedback.lightImpact();
 
-      if (prefs.haptics) HapticFeedback.lightImpact();
-
-      String? password;
-      if (profile.authMethod == AuthMethod.password) {
-        password = await storage.read(key: 'password_${profile.id}');
-      }
-
-      final sessionId =
-          await manager.createSession(profile, password: password);
-      ref.read(activeSessionIdProvider.notifier).state = sessionId;
+      await connectToProfile(ref, profile);
     } catch (e) {
       if (mounted) {
         showErrorDialog(
@@ -50,7 +42,7 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
         );
       }
     } finally {
-      if (mounted) setState(() => _connecting = false);
+      if (mounted) setState(() => _connectingProfileId = null);
     }
   }
 
@@ -174,7 +166,7 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
                               ),
                               child: _ProfileCard(
                                 profile: profile,
-                                connecting: _connecting,
+                                connecting: _connectingProfileId == profile.id,
                                 onTap: () =>
                                     _connect(profile),
                                 onEdit: () =>

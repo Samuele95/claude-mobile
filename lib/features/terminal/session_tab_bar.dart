@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/models/session.dart';
 import '../../core/providers.dart';
 import '../../core/utils/platform_utils.dart';
+import '../../core/utils/session_actions.dart';
+import '../settings/preferences_provider.dart';
 
 class SessionTabBar extends ConsumerWidget {
   final VoidCallback onNewSession;
@@ -36,28 +38,19 @@ class SessionTabBar extends ConsumerWidget {
               itemBuilder: (context, index) {
                 final session = sessions[index];
                 final isActive = session.id == activeId;
+                final prefs = ref.watch(preferencesProvider);
                 return _SessionTab(
                   session: session,
                   isActive: isActive,
                   stateColor: session.state.statusColor,
                   onTap: () {
-                    HapticFeedback.selectionClick();
+                    if (isMobile && prefs.haptics) {
+                      HapticFeedback.selectionClick();
+                    }
                     ref.read(activeSessionIdProvider.notifier).state =
                         session.id;
                   },
-                  onClose: () async {
-                    await ref
-                        .read(connectionManagerProvider)
-                        .closeSession(session.id);
-                    final remaining =
-                        ref.read(sessionsProvider).valueOrNull ?? [];
-                    if (remaining.isEmpty) {
-                      ref.read(activeSessionIdProvider.notifier).state = null;
-                    } else if (activeId == session.id) {
-                      ref.read(activeSessionIdProvider.notifier).state =
-                          remaining.first.id;
-                    }
-                  },
+                  onClose: () => closeAndSwitchSession(ref, session.id),
                   onReconnect: () {
                     ref
                         .read(connectionManagerProvider)

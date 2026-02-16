@@ -96,7 +96,7 @@ class ServerProfile {
       ),
       claudeMode: mode,
       customPrompt: prompt,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
     );
   }
 

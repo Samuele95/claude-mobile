@@ -82,7 +82,14 @@ class FilePanel extends ConsumerWidget {
                     ),
                   ),
                 ),
-                const Expanded(child: LocalBrowser()),
+                Expanded(
+                  child: LocalBrowser(
+                    onSendToTerminal: (path) {
+                      controller?.sendText(path);
+                      if (isDrawer) Navigator.of(context).pop();
+                    },
+                  ),
+                ),
               ],
             ),
           ),

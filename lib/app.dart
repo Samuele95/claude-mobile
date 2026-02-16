@@ -24,23 +24,42 @@ class ClaudeMobileApp extends ConsumerWidget {
   }
 }
 
-class AppShell extends ConsumerWidget {
+class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AppShell> createState() => _AppShellState();
+}
+
+class _AppShellState extends ConsumerState<AppShell> {
+  @override
+  void initState() {
+    super.initState();
+    if (isDesktop) {
+      // Set initial window title after first frame
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _updateWindowTitle();
+      });
+    }
+  }
+
+  void _updateWindowTitle() {
+    final activeId = ref.read(activeSessionIdProvider);
+    final sessions = ref.read(sessionsProvider).valueOrNull ?? [];
+    final session = sessions.where((s) => s.id == activeId).firstOrNull;
+    setWindowTitle(session != null
+        ? 'Claude Carry — ${session.profile.name}'
+        : 'Claude Carry');
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final activeSessionId = ref.watch(activeSessionIdProvider);
 
-    // Update window title on desktop when active session changes
+    // Update window title via listener (not in build)
     if (isDesktop) {
-      final sessions = ref.watch(sessionsProvider).valueOrNull ?? [];
-      final activeSession =
-          sessions.where((s) => s.id == activeSessionId).firstOrNull;
-      if (activeSession != null) {
-        setWindowTitle('Claude Carry — ${activeSession.profile.name}');
-      } else {
-        setWindowTitle('Claude Carry');
-      }
+      ref.listen(activeSessionIdProvider, (_, _) => _updateWindowTitle());
+      ref.listen(sessionsProvider, (_, _) => _updateWindowTitle());
     }
 
     if (isWideScreen(context)) {

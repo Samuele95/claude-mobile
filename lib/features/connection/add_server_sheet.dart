@@ -3,8 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/models/server_profile.dart';
 import '../../core/providers.dart';
-import '../../core/ssh/ssh_service.dart';
+import '../../core/ssh/connection_tester.dart';
 import '../../core/utils/platform_utils.dart';
+import '../../core/utils/dialogs.dart';
 import '../settings/preferences_provider.dart';
 
 class AddServerSheet extends ConsumerStatefulWidget {
@@ -65,18 +66,17 @@ class _AddServerSheetState extends ConsumerState<AddServerSheet> {
     });
 
     final profile = _buildProfile();
-    final keyManager = ref.read(keyManagerProvider);
-    // Create a temporary SshService to avoid mutating global state
-    final tempSsh = SshService(keyManager: keyManager);
+    final tester = ConnectionTester(
+      keyManager: ref.read(keyManagerProvider),
+      hostKeyStore: ref.read(hostKeyStoreProvider),
+    );
 
     try {
-      await tempSsh.connect(profile, password: _passwordCtrl.text);
-      await tempSsh.disconnect();
+      await tester.test(profile, password: _passwordCtrl.text);
       if (mounted) setState(() => _testResult = 'success');
     } catch (e) {
-      if (mounted) setState(() => _testResult = e.toString());
+      if (mounted) setState(() => _testResult = friendlyError(e));
     } finally {
-      await tempSsh.dispose();
       if (mounted) setState(() => _testing = false);
     }
   }
@@ -90,13 +90,17 @@ class _AddServerSheetState extends ConsumerState<AddServerSheet> {
     final profile = _buildProfile();
     await ref.read(profilesProvider.notifier).add(profile);
 
-    // Store password securely if using password auth
+    // Store password securely if using password auth (skip if editing and field is empty)
     if (_authMethod == AuthMethod.password && _passwordCtrl.text.isNotEmpty) {
       final storage = ref.read(secureStorageProvider);
       await storage.write(
         key: 'password_${profile.id}',
         value: _passwordCtrl.text,
       );
+    } else if (_authMethod != AuthMethod.password) {
+      // Clean up password if auth method changed to key
+      final storage = ref.read(secureStorageProvider);
+      await storage.delete(key: 'password_${profile.id}');
     }
 
     if (mounted) Navigator.of(context).pop(profile);
@@ -169,6 +173,13 @@ class _AddServerSheetState extends ConsumerState<AddServerSheet> {
                           decoration:
                               const InputDecoration(labelText: 'Port'),
                           keyboardType: TextInputType.number,
+                          validator: (v) {
+                            final port = int.tryParse(v ?? '');
+                            if (port == null || port < 1 || port > 65535) {
+                              return 'Invalid port';
+                            }
+                            return null;
+                          },
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -207,7 +218,9 @@ class _AddServerSheetState extends ConsumerState<AddServerSheet> {
                     TextFormField(
                       controller: _passwordCtrl,
                       decoration: InputDecoration(
-                        labelText: 'Password',
+                        labelText: widget.existing != null
+                            ? 'Password (leave blank to keep current)'
+                            : 'Password',
                         suffixIcon: IconButton(
                           icon: Icon(_obscurePassword
                               ? Icons.visibility_off
@@ -217,10 +230,15 @@ class _AddServerSheetState extends ConsumerState<AddServerSheet> {
                         ),
                       ),
                       obscureText: _obscurePassword,
-                      validator: (v) => _authMethod == AuthMethod.password &&
-                              (v?.isEmpty ?? true)
-                          ? 'Required'
-                          : null,
+                      validator: (v) {
+                        if (_authMethod != AuthMethod.password) return null;
+                        // When editing, allow empty (keeps existing password)
+                        if (widget.existing != null && (v?.isEmpty ?? true)) {
+                          return null;
+                        }
+                        if (v?.isEmpty ?? true) return 'Required';
+                        return null;
+                      },
                     )
                   else
                     Text(

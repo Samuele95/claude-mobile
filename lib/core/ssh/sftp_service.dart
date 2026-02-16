@@ -14,6 +14,11 @@ class SftpService {
     _sftp = await client.sftp();
   }
 
+  /// Initialize with an already-opened SftpClient.
+  void initializeWithClient(SftpClient client) {
+    _sftp = client;
+  }
+
   Future<List<SftpName>> listDirectory(String path) async {
     _ensureConnected();
     final items = await _sftp!.listdir(path);
@@ -51,16 +56,17 @@ class SftpService {
 
       try {
         int transferred = 0;
-        final stream = localFile.openRead();
-
-        await for (final chunk in stream) {
-          await remoteFile.write(Stream.value(Uint8List.fromList(chunk)));
-          transferred += chunk.length;
+        // Stream the file directly — avoids per-chunk Stream.value() overhead
+        final dataStream = localFile.openRead().map((chunk) {
+          final bytes = Uint8List.fromList(chunk);
+          transferred += bytes.length;
           _transferController.add(item.copyWith(
             transferredBytes: transferred,
             status: TransferStatus.inProgress,
           ));
-        }
+          return bytes;
+        });
+        await remoteFile.write(dataStream);
       } finally {
         await remoteFile.close();
       }
@@ -140,6 +146,13 @@ class SftpService {
   Future<void> rmdir(String path) async {
     _ensureConnected();
     await _sftp!.rmdir(path);
+  }
+
+  /// Resolve a path to its absolute form on the remote server.
+  /// Useful for resolving '.' to the user's home directory.
+  Future<String> realpath(String path) async {
+    _ensureConnected();
+    return _sftp!.absolute(path);
   }
 
   Future<Uint8List> readFileBytes(String path) async {

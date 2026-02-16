@@ -167,23 +167,28 @@ class _SmartToolbarState extends ConsumerState<SmartToolbar> {
               _ToolbarButton(
                 icon: Icons.tab,
                 onTap: widget.onSessionMenu,
+                tooltip: 'Sessions',
               ),
               _ToolbarDivider(),
               _ToolbarButton(
                 icon: Icons.keyboard_arrow_left,
                 onTap: () => _onKey(TerminalKey.arrowLeft),
+                tooltip: 'Left',
               ),
               _ToolbarButton(
                 icon: Icons.keyboard_arrow_right,
                 onTap: () => _onKey(TerminalKey.arrowRight),
+                tooltip: 'Right',
               ),
               _ToolbarButton(
                 icon: Icons.keyboard_arrow_up,
                 onTap: () => _onKey(TerminalKey.arrowUp),
+                tooltip: 'Up',
               ),
               _ToolbarButton(
                 icon: Icons.keyboard_arrow_down,
                 onTap: () => _onKey(TerminalKey.arrowDown),
+                tooltip: 'Down',
               ),
               _ToolbarDivider(),
               _ToolbarTextButton(
@@ -203,14 +208,17 @@ class _SmartToolbarState extends ConsumerState<SmartToolbar> {
               _ToolbarButton(
                 icon: Icons.content_paste,
                 onTap: _onPaste,
+                tooltip: 'Paste',
               ),
               _ToolbarButton(
                 icon: Icons.terminal,
                 onTap: widget.onCommandPalette,
+                tooltip: 'Commands',
               ),
               _ToolbarButton(
                 icon: Icons.attach_file,
                 onTap: widget.onAttachFile,
+                tooltip: 'Attach file',
               ),
             ],
           ),
@@ -223,20 +231,26 @@ class _SmartToolbarState extends ConsumerState<SmartToolbar> {
 class _ToolbarButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
+  final String? tooltip;
 
-  const _ToolbarButton({required this.icon, required this.onTap});
+  const _ToolbarButton({required this.icon, required this.onTap, this.tooltip});
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
+    Widget child = Expanded(
       child: GestureDetector(
         onTap: onTap,
+        behavior: HitTestBehavior.opaque,
         child: Container(
           alignment: Alignment.center,
           child: Icon(icon, size: 22, color: Theme.of(context).colorScheme.onSurface),
         ),
       ),
     );
+    if (tooltip != null) {
+      child = Tooltip(message: tooltip!, child: child);
+    }
+    return child;
   }
 }
 

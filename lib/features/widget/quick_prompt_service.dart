@@ -1,8 +1,11 @@
+import 'dart:io';
 import 'package:home_widget/home_widget.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import '../../core/models/server_profile.dart';
 import '../../core/ssh/ssh_service.dart';
 import '../../core/storage/key_manager.dart';
 import '../../core/storage/profile_repository.dart';
+import '../../core/utils/command_builder.dart';
 
 class QuickPromptService {
   final KeyManager _keyManager;
@@ -26,8 +29,10 @@ class QuickPromptService {
   }
 
   Future<void> handlePrompt(String prompt) async {
-    await HomeWidget.saveWidgetData<String>('status', 'running');
-    await HomeWidget.updateWidget(name: 'QuickPromptWidgetProvider');
+    if (Platform.isAndroid) {
+      await HomeWidget.saveWidgetData<String>('status', 'running');
+      await HomeWidget.updateWidget(name: 'QuickPromptWidgetProvider');
+    }
 
     // Create a dedicated SshService instance for this one-shot command
     final ssh = SshService(keyManager: _keyManager);
@@ -46,23 +51,27 @@ class QuickPromptService {
               orElse: () => profiles.first)
           : profiles.first;
 
-      // Escape for double-quoted shell string: backslash, dollar, backtick, double-quote
-      final escapedPrompt = prompt
-          .replaceAll(r'\', r'\\')
-          .replaceAll(r'$', r'\$')
-          .replaceAll('`', r'\`')
-          .replaceAll('"', r'\"');
+      // Fetch password from secure storage for password-auth profiles
+      final storage = _profiles.storage;
+      String? password;
+      if (profile.authMethod == AuthMethod.password) {
+        password = await storage.read(key: 'password_${profile.id}');
+      }
+
+      final escapedPrompt = shellEscape(prompt);
       final command =
           'claude -p "$escapedPrompt" --dangerously-skip-permissions 2>&1';
-      final result = await ssh.executeCommand(profile, command);
+      final result = await ssh.executeCommand(profile, command, password: password);
 
       await _showNotification('Claude', result.trim());
     } catch (e) {
       await _showNotification('Error', e.toString());
     } finally {
       await ssh.dispose();
-      await HomeWidget.saveWidgetData<String>('status', 'idle');
-      await HomeWidget.updateWidget(name: 'QuickPromptWidgetProvider');
+      if (Platform.isAndroid) {
+        await HomeWidget.saveWidgetData<String>('status', 'idle');
+        await HomeWidget.updateWidget(name: 'QuickPromptWidgetProvider');
+      }
     }
   }
 

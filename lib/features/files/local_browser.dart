@@ -1,11 +1,15 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:path/path.dart' as p;
 import '../../core/utils/format_utils.dart';
 import '../../core/utils/platform_utils.dart';
 import 'file_item_tile.dart';
 
 class LocalBrowser extends StatefulWidget {
-  const LocalBrowser({super.key});
+  final void Function(String path)? onSendToTerminal;
+
+  const LocalBrowser({super.key, this.onSendToTerminal});
 
   @override
   State<LocalBrowser> createState() => _LocalBrowserState();
@@ -14,6 +18,7 @@ class LocalBrowser extends StatefulWidget {
 class _LocalBrowserState extends State<LocalBrowser> {
   String _currentPath = defaultLocalPath;
   List<FileSystemEntity> _entries = [];
+  Map<String, int> _fileSizes = {};
   bool _loading = true;
   String? _error;
   int _loadGeneration = 0;
@@ -39,11 +44,26 @@ class _LocalBrowserState extends State<LocalBrowser> {
         final bIsDir = b is Directory;
         if (aIsDir && !bIsDir) return -1;
         if (!aIsDir && bIsDir) return 1;
-        return a.path.split('/').last.compareTo(b.path.split('/').last);
+        return p.basename(a.path).compareTo(p.basename(b.path));
       });
+
+      // Collect file sizes asynchronously to avoid UI thread blocking
+      final sizes = <String, int>{};
+      for (final entity in entities) {
+        if (entity is File) {
+          try {
+            final stat = await entity.stat();
+            sizes[entity.path] = stat.size;
+          } catch (_) {
+            sizes[entity.path] = -1;
+          }
+        }
+      }
+
       if (!mounted || generation != _loadGeneration) return;
       setState(() {
         _entries = entities;
+        _fileSizes = sizes;
         _loading = false;
       });
     } catch (e) {
@@ -66,7 +86,68 @@ class _LocalBrowserState extends State<LocalBrowser> {
     _loadDirectory();
   }
 
-  String _fileName(FileSystemEntity entity) => entity.path.split('/').last;
+  void _showContextMenu(BuildContext context, FileSystemEntity entity) {
+    final path = entity.path;
+    showModalBottomSheet(
+      context: context,
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.copy),
+              title: const Text('Copy path'),
+              onTap: () {
+                Clipboard.setData(ClipboardData(text: path));
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Copied: $path')),
+                );
+              },
+            ),
+            if (widget.onSendToTerminal != null)
+              ListTile(
+                leading: const Icon(Icons.terminal),
+                title: const Text('Send path to terminal'),
+                onTap: () {
+                  Navigator.pop(context);
+                  widget.onSendToTerminal!(path);
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDesktopContextMenu(
+      BuildContext context, FileSystemEntity entity, TapDownDetails details) {
+    final path = entity.path;
+    final overlay =
+        Overlay.of(context).context.findRenderObject() as RenderBox;
+    showMenu<String>(
+      context: context,
+      position: RelativeRect.fromRect(
+        details.globalPosition & const Size(1, 1),
+        Offset.zero & overlay.size,
+      ),
+      items: [
+        const PopupMenuItem(value: 'copy', child: Text('Copy path')),
+        if (widget.onSendToTerminal != null)
+          const PopupMenuItem(
+              value: 'send', child: Text('Send path to terminal')),
+      ],
+    ).then((value) {
+      if (value == 'copy') {
+        Clipboard.setData(ClipboardData(text: path));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Copied: $path')),
+        );
+      } else if (value == 'send') {
+        widget.onSendToTerminal?.call(path);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -115,15 +196,24 @@ class _LocalBrowserState extends State<LocalBrowser> {
                         itemBuilder: (context, index) {
                           final entity = _entries[index];
                           final isDir = entity is Directory;
+                          final size = _fileSizes[entity.path];
                           return FileItemTile(
-                            name: _fileName(entity),
+                            name: p.basename(entity.path),
                             isDirectory: isDir,
                             subtitle: isDir
                                 ? null
-                                : formatFileSize((entity as File).lengthSync()),
+                                : (size != null && size >= 0)
+                                    ? formatFileSize(size)
+                                    : null,
                             onTap: isDir
                                 ? () => _navigate(entity.path)
-                                : () {},
+                                : () => _showContextMenu(context, entity),
+                            onLongPress: () =>
+                                _showContextMenu(context, entity),
+                            onSecondaryTapDown: isDesktop
+                                ? (details) => _showDesktopContextMenu(
+                                    context, entity, details)
+                                : null,
                           );
                         },
                       ),

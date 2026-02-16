@@ -31,6 +31,21 @@ class _RemoteBrowserState extends ConsumerState<RemoteBrowser> {
   @override
   void initState() {
     super.initState();
+    _resolveHomeDirectory();
+  }
+
+  Future<void> _resolveHomeDirectory() async {
+    try {
+      final sftp = ref.read(sessionSftpProvider(widget.sessionId));
+      if (sftp != null) {
+        final home = await sftp.realpath('.');
+        if (mounted) {
+          _currentPath = home;
+        }
+      }
+    } catch (_) {
+      // Fall back to /home if realpath fails
+    }
     _loadDirectory();
   }
 

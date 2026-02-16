@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
-  static const _version = '1.5.0';
+  static const _version = '1.6.0';
   static const _repoUrl = 'https://github.com/Samuele95/claude-carry';
 
   @override
@@ -116,7 +117,7 @@ class AboutScreen extends StatelessWidget {
                   title: const Text('GitHub Repository'),
                   subtitle: const Text('Samuele95/claude-carry'),
                   trailing: const Icon(Icons.open_in_new, size: 18),
-                  onTap: () => _copyToClipboard(context, _repoUrl),
+                  onTap: () => _launchUrl(context, _repoUrl),
                 ),
                 const Divider(height: 1, indent: 16, endIndent: 16),
                 ListTile(
@@ -124,7 +125,7 @@ class AboutScreen extends StatelessWidget {
                   title: const Text('Report a Bug'),
                   subtitle: const Text('Open an issue on GitHub'),
                   trailing: const Icon(Icons.open_in_new, size: 18),
-                  onTap: () => _copyToClipboard(
+                  onTap: () => _launchUrl(
                       context, '$_repoUrl/issues/new'),
                 ),
                 const Divider(height: 1, indent: 16, endIndent: 16),
@@ -133,7 +134,7 @@ class AboutScreen extends StatelessWidget {
                   title: const Text('Star on GitHub'),
                   subtitle: const Text('If Claude Carry saved you a trip to your desk'),
                   trailing: const Icon(Icons.open_in_new, size: 18),
-                  onTap: () => _copyToClipboard(context, _repoUrl),
+                  onTap: () => _launchUrl(context, _repoUrl),
                 ),
               ],
             ),
@@ -154,15 +155,23 @@ class AboutScreen extends StatelessWidget {
     );
   }
 
-  void _copyToClipboard(BuildContext context, String url) {
-    Clipboard.setData(ClipboardData(text: url));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Copied: $url'),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-      ),
-    );
+  Future<void> _launchUrl(BuildContext context, String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      // Fallback: copy to clipboard
+      Clipboard.setData(ClipboardData(text: url));
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Copied: $url'),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
   }
 }
 
