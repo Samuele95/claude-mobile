@@ -9,8 +9,8 @@ permissions:
   contents: write
 
 jobs:
-  build-and-release:
-    name: Build & Publish Release
+  build-android:
+    name: Build Android APK
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,25 +26,94 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Install dependencies
-        run: flutter pub get
+      - run: flutter pub get
+      - run: flutter analyze --fatal-infos
+      - run: flutter test
+      - run: flutter build apk --release
 
-      - name: Analyze
-        run: flutter analyze --fatal-infos
-
-      - name: Run tests
-        run: flutter test
-
-      - name: Build release APK
-        run: flutter build apk --release
-
-      - name: Rename APK with version
+      - name: Rename APK
         run: |
           VERSION=${GITHUB_REF#refs/tags/}
-          cp build/app/outputs/flutter-apk/app-release.apk "claude-carry-${VERSION}.apk"
+          cp build/app/outputs/flutter-apk/app-release.apk "claude-carry-${VERSION}-android.apk"
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: claude-carry-*-android.apk
+
+  build-linux:
+    name: Build Linux
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.0'
+          channel: 'master'
+          cache: true
+
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y ninja-build libgtk-3-dev
+
+      - run: flutter pub get
+      - run: flutter build linux --release
+
+      - name: Package Linux bundle
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          cd build/linux/x64/release/bundle
+          tar czf "${GITHUB_WORKSPACE}/claude-carry-${VERSION}-linux-x64.tar.gz" .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-bundle
+          path: claude-carry-*-linux-x64.tar.gz
+
+  build-windows:
+    name: Build Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.0'
+          channel: 'master'
+          cache: true
+
+      - run: flutter pub get
+      - run: flutter build windows --release
+
+      - name: Package Windows bundle
+        shell: pwsh
+        run: |
+          $version = $env:GITHUB_REF -replace 'refs/tags/', ''
+          Compress-Archive -Path "build\windows\x64\runner\Release\*" -DestinationPath "claude-carry-${version}-windows-x64.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-bundle
+          path: claude-carry-*-windows-x64.zip
+
+  release:
+    name: Create GitHub Release
+    needs: [build-android, build-linux, build-windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+
+      - name: List artifacts
+        run: ls -lh claude-carry-*
+
+      - uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
-          files: claude-carry-*.apk
+          files: |
+            claude-carry-*-android.apk
+            claude-carry-*-linux-x64.tar.gz
+            claude-carry-*-windows-x64.zip
