@@ -1,7 +1,7 @@
 name: claude_mobile
 description: "SSH terminal client for Claude Code — mobile & desktop"
 publish_to: 'none'
-version: 1.7.0+1
+version: 1.8.0+1
 
 environment:
   sdk: ^3.11.0

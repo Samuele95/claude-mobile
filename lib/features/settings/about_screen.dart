@@ -5,7 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
-  static const _version = '1.7.0';
+  static const _version = '1.8.0';
   static const _repoUrl = 'https://github.com/Samuele95/claude-carry';
 
   @override
