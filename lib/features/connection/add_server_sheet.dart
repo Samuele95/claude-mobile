@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/models/server_profile.dart';
 import '../../core/providers.dart';
 import '../../core/ssh/connection_tester.dart';
+import '../../core/storage/profile_repository.dart';
 import '../../core/utils/platform_utils.dart';
 import '../../core/utils/dialogs.dart';
 import '../settings/preferences_provider.dart';
@@ -94,13 +95,13 @@ class _AddServerSheetState extends ConsumerState<AddServerSheet> {
     if (_authMethod == AuthMethod.password && _passwordCtrl.text.isNotEmpty) {
       final storage = ref.read(secureStorageProvider);
       await storage.write(
-        key: 'password_${profile.id}',
+        key: StorageKeys.password(profile.id),
         value: _passwordCtrl.text,
       );
     } else if (_authMethod != AuthMethod.password) {
       // Clean up password if auth method changed to key
       final storage = ref.read(secureStorageProvider);
-      await storage.delete(key: 'password_${profile.id}');
+      await storage.delete(key: StorageKeys.password(profile.id));
     }
 
     if (mounted) Navigator.of(context).pop(profile);

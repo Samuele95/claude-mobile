@@ -1,55 +1,7 @@
 import 'dart:typed_data';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:claude_mobile/core/storage/host_key_store.dart';
-
-/// Minimal fake for the subset of FlutterSecureStorage used by HostKeyStore.
-/// Uses noSuchMethod to handle unimplemented interface members.
-class FakeSecureStorage extends Fake implements FlutterSecureStorage {
-  final Map<String, String> _data = {};
-
-  @override
-  Future<String?> read({
-    required String key,
-    IOSOptions? iOptions,
-    AndroidOptions? aOptions,
-    LinuxOptions? lOptions,
-    WebOptions? webOptions,
-    MacOsOptions? mOptions,
-    WindowsOptions? wOptions,
-  }) async =>
-      _data[key];
-
-  @override
-  Future<void> write({
-    required String key,
-    required String? value,
-    IOSOptions? iOptions,
-    AndroidOptions? aOptions,
-    LinuxOptions? lOptions,
-    WebOptions? webOptions,
-    MacOsOptions? mOptions,
-    WindowsOptions? wOptions,
-  }) async {
-    if (value != null) {
-      _data[key] = value;
-    }
-  }
-
-  @override
-  Future<void> delete({
-    required String key,
-    IOSOptions? iOptions,
-    AndroidOptions? aOptions,
-    LinuxOptions? lOptions,
-    WebOptions? webOptions,
-    MacOsOptions? mOptions,
-    WindowsOptions? wOptions,
-  }) async {
-    _data.remove(key);
-  }
-}
+import '../../helpers/fake_secure_storage.dart';
 
 void main() {
   group('HostKeyStore', () {

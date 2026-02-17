@@ -1,57 +1,8 @@
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:claude_mobile/core/storage/profile_repository.dart';
 import 'package:claude_mobile/core/models/server_profile.dart';
-
-/// Minimal fake for the subset of FlutterSecureStorage used by ProfileRepository.
-class FakeSecureStorage extends Fake implements FlutterSecureStorage {
-  final Map<String, String> _data = {};
-
-  @override
-  Future<String?> read({
-    required String key,
-    IOSOptions? iOptions,
-    AndroidOptions? aOptions,
-    LinuxOptions? lOptions,
-    WebOptions? webOptions,
-    MacOsOptions? mOptions,
-    WindowsOptions? wOptions,
-  }) async =>
-      _data[key];
-
-  @override
-  Future<void> write({
-    required String key,
-    required String? value,
-    IOSOptions? iOptions,
-    AndroidOptions? aOptions,
-    LinuxOptions? lOptions,
-    WebOptions? webOptions,
-    MacOsOptions? mOptions,
-    WindowsOptions? wOptions,
-  }) async {
-    if (value != null) {
-      _data[key] = value;
-    }
-  }
-
-  @override
-  Future<void> delete({
-    required String key,
-    IOSOptions? iOptions,
-    AndroidOptions? aOptions,
-    LinuxOptions? lOptions,
-    WebOptions? webOptions,
-    MacOsOptions? mOptions,
-    WindowsOptions? wOptions,
-  }) async {
-    _data.remove(key);
-  }
-
-  /// Expose raw data for test assertions.
-  Map<String, String> get rawData => _data;
-}
+import '../../helpers/fake_secure_storage.dart';
 
 ServerProfile _makeProfile({
   String id = 'p1',
@@ -176,6 +127,16 @@ void main() {
         final id = await repo.getDefaultProfileId();
         expect(id, 'my-default');
       });
+    });
+  });
+
+  group('StorageKeys', () {
+    test('password key includes profile id', () {
+      expect(StorageKeys.password('abc123'), 'password_abc123');
+    });
+
+    test('password key is deterministic', () {
+      expect(StorageKeys.password('x'), StorageKeys.password('x'));
     });
   });
 }

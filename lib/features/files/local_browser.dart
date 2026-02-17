@@ -81,6 +81,7 @@ class _LocalBrowserState extends State<LocalBrowser> {
   }
 
   void _navigateUp() {
+    if (_currentPath == '/') return;
     final parent = Directory(_currentPath).parent.path;
     _currentPath = parent;
     _loadDirectory();

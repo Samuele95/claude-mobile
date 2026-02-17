@@ -91,8 +91,8 @@ class ProfilesNotifier extends AsyncNotifier<List<ServerProfile>> {
     await ref.read(profileRepositoryProvider).delete(id);
     // Clean up orphaned password and key entries
     final storage = ref.read(secureStorageProvider);
-    await storage.delete(key: 'password_$id');
-    await storage.delete(key: 'profile_key_$id');
+    await storage.delete(key: StorageKeys.password(id));
+    await ref.read(keyManagerProvider).deleteProfileKey(id);
     state = AsyncData(await ref.read(profileRepositoryProvider).getAll());
   }
 }

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 import '../models/session.dart';
 import '../models/server_profile.dart';
 import '../models/connection_state.dart';
@@ -97,8 +98,8 @@ class ConnectionManager implements ConnectionManagerInterface {
       try {
         final sftpClient = await ssh.openSftp();
         sftp.initializeWithClient(sftpClient);
-      } catch (_) {
-        // SFTP unavailable; session continues without file management
+      } catch (e) {
+        developer.log('SFTP unavailable: $e', name: 'ConnectionManager');
       }
 
       return sessionId;
@@ -135,8 +136,8 @@ class ConnectionManager implements ConnectionManagerInterface {
       try {
         final sftpClient = await ssh.openSftp();
         sftp.initializeWithClient(sftpClient);
-      } catch (_) {
-        // SFTP unavailable after reconnect; file panel will show error
+      } catch (e) {
+        developer.log('SFTP unavailable after reconnect: $e', name: 'ConnectionManager');
       }
     }
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers.dart';
 import '../models/server_profile.dart';
+import '../storage/profile_repository.dart';
 import '../../features/settings/preferences_provider.dart';
 import 'dialogs.dart';
 
@@ -43,7 +44,7 @@ Future<String> connectToProfile(WidgetRef ref, ServerProfile profile) async {
   // Password callback — reads from secure storage on-demand
   Future<String?> passwordProvider() async {
     if (profile.authMethod != AuthMethod.password) return null;
-    return storage.read(key: 'password_${profile.id}');
+    return storage.read(key: StorageKeys.password(profile.id));
   }
 
   // Fetch password for initial connection

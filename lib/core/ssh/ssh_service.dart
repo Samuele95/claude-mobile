@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'dart:typed_data';
 import 'package:dartssh2/dartssh2.dart';
 import '../models/server_profile.dart';
@@ -147,7 +148,7 @@ class SshService implements SshServiceInterface {
         fingerprint,
       );
       if (result == HostKeyVerifyResult.mismatch) {
-        return false;
+        throw HostKeyMismatchException(profile.host, profile.port);
       }
       return true; // trusted (first time) or matched
     }
@@ -228,7 +229,8 @@ class SshService implements SshServiceInterface {
         initialHeight: _lastHeight,
       );
       _autoReconnect = wasAutoReconnect;
-    } catch (_) {
+    } catch (e) {
+      developer.log('Reconnect failed: $e', name: 'SshService');
       _autoReconnect = wasAutoReconnect;
       _setState(SshConnectionState.error);
     }

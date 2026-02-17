@@ -83,10 +83,4 @@ class AppTerminalThemes {
     searchHitBackgroundCurrent: const Color(0xFFA855F7),
     searchHitForeground: const Color(0xFFFFFFFF),
   );
-
-  static TerminalTheme fromPreferences(String themeName) => switch (themeName) {
-        'amoled' => amoled,
-        'light' => light,
-        _ => dark,
-      };
 }

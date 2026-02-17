@@ -3,6 +3,14 @@ import 'dart:developer' as developer;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/server_profile.dart';
 
+/// Central registry of secure storage key formats.
+/// Prevents key-format divergence across files (see SEC-2).
+class StorageKeys {
+  StorageKeys._();
+
+  static String password(String profileId) => 'password_$profileId';
+}
+
 class ProfileRepository {
   static const _profilesKey = 'server_profiles';
   static const _defaultProfileKey = 'default_profile_id';

@@ -4,24 +4,28 @@ import 'package:home_widget/home_widget.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../../core/models/server_profile.dart';
 import '../../core/ssh/ssh_service.dart';
+import '../../core/storage/host_key_store.dart';
 import '../../core/storage/key_manager.dart';
-import '../../core/storage/profile_repository.dart';
+import '../../core/storage/profile_repository.dart' show ProfileRepository, StorageKeys;
 import '../../core/utils/command_builder.dart';
 
 class QuickPromptService {
   final KeyManager _keyManager;
   final ProfileRepository _profiles;
   final FlutterSecureStorage _storage;
+  final HostKeyStore _hostKeyStore;
   final FlutterLocalNotificationsPlugin _notifications;
 
   QuickPromptService({
     required KeyManager keyManager,
     required ProfileRepository profiles,
     required FlutterSecureStorage storage,
+    required HostKeyStore hostKeyStore,
     FlutterLocalNotificationsPlugin? notifications,
   })  : _keyManager = keyManager,
         _profiles = profiles,
         _storage = storage,
+        _hostKeyStore = hostKeyStore,
         _notifications = notifications ?? FlutterLocalNotificationsPlugin() {
     _initNotifications();
   }
@@ -40,7 +44,7 @@ class QuickPromptService {
     }
 
     // Create a dedicated SshService instance for this one-shot command
-    final ssh = SshService(keyManager: _keyManager);
+    final ssh = SshService(keyManager: _keyManager, hostKeyStore: _hostKeyStore);
 
     try {
       final defaultId = await _profiles.getDefaultProfileId();
@@ -59,7 +63,7 @@ class QuickPromptService {
       // Fetch password from secure storage for password-auth profiles
       String? password;
       if (profile.authMethod == AuthMethod.password) {
-        password = await _storage.read(key: 'password_${profile.id}');
+        password = await _storage.read(key: StorageKeys.password(profile.id));
       }
 
       final escapedPrompt = shellEscape(prompt);
