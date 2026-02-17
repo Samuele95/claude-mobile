@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -43,8 +44,8 @@ class _RemoteBrowserState extends ConsumerState<RemoteBrowser> {
           _currentPath = home;
         }
       }
-    } catch (_) {
-      // Fall back to /home if realpath fails
+    } catch (e) {
+      developer.log('Failed to resolve home directory: $e', name: 'RemoteBrowser');
     }
     _loadDirectory();
   }
@@ -162,6 +163,7 @@ class _RemoteBrowserState extends ConsumerState<RemoteBrowser> {
       } else {
         await sftp.remove(fullPath);
       }
+      if (!mounted) return;
       _loadDirectory();
     } catch (e) {
       if (mounted) {

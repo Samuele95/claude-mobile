@@ -44,7 +44,7 @@ class _DesktopShellState extends ConsumerState<DesktopShell>
     }
   }
 
-  void _closeCurrentSession() async {
+  Future<void> _closeCurrentSession() async {
     final activeId = ref.read(activeSessionIdProvider);
     if (activeId == null) return;
     await closeSessionWithConfirm(context, ref, activeId);

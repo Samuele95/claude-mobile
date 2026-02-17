@@ -161,8 +161,14 @@ class _AddServerSheetState extends ConsumerState<AddServerSheet> {
                     decoration:
                         const InputDecoration(labelText: 'Host / IP Address'),
                     keyboardType: TextInputType.url,
-                    validator: (v) =>
-                        v?.trim().isEmpty == true ? 'Required' : null,
+                    validator: (v) {
+                      final host = v?.trim() ?? '';
+                      if (host.isEmpty) return 'Required';
+                      if (!RegExp(r'^[a-zA-Z0-9._\-:\[\]]+$').hasMatch(host)) {
+                        return 'Invalid hostname';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 12),
                   Row(
@@ -190,8 +196,14 @@ class _AddServerSheetState extends ConsumerState<AddServerSheet> {
                           controller: _userCtrl,
                           decoration:
                               const InputDecoration(labelText: 'Username'),
-                          validator: (v) =>
-                              v?.trim().isEmpty == true ? 'Required' : null,
+                          validator: (v) {
+                            final user = v?.trim() ?? '';
+                            if (user.isEmpty) return 'Required';
+                            if (!RegExp(r'^[a-zA-Z0-9._\-]+$').hasMatch(user)) {
+                              return 'Invalid username';
+                            }
+                            return null;
+                          },
                         ),
                       ),
                     ],

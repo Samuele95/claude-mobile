@@ -169,7 +169,7 @@ class _SmartToolbarState extends ConsumerState<SmartToolbar> {
                 onTap: widget.onSessionMenu,
                 tooltip: 'Sessions',
               ),
-              _ToolbarDivider(),
+              const _ToolbarDivider(),
               _ToolbarButton(
                 icon: Icons.keyboard_arrow_left,
                 onTap: () => _onKey(TerminalKey.arrowLeft),
@@ -190,7 +190,7 @@ class _SmartToolbarState extends ConsumerState<SmartToolbar> {
                 onTap: () => _onKey(TerminalKey.arrowDown),
                 tooltip: 'Down',
               ),
-              _ToolbarDivider(),
+              const _ToolbarDivider(),
               _ToolbarTextButton(
                 label: 'Tab',
                 onTap: () => _onKey(TerminalKey.tab),
@@ -204,7 +204,7 @@ class _SmartToolbarState extends ConsumerState<SmartToolbar> {
                 active: _ctrlActive,
                 onTap: _toggleCtrl,
               ),
-              _ToolbarDivider(),
+              const _ToolbarDivider(),
               _ToolbarButton(
                 icon: Icons.content_paste,
                 onTap: _onPaste,
@@ -293,6 +293,8 @@ class _ToolbarTextButton extends StatelessWidget {
 }
 
 class _ToolbarDivider extends StatelessWidget {
+  const _ToolbarDivider();
+
   @override
   Widget build(BuildContext context) {
     return Container(

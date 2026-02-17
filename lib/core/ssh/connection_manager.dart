@@ -8,14 +8,27 @@ import '../storage/host_key_store.dart';
 import '../utils/command_builder.dart';
 import 'ssh_service.dart';
 import 'sftp_service.dart';
+import 'ssh_service_interface.dart';
+import 'sftp_service_interface.dart';
 
 import 'connection_manager_interface.dart';
 
+/// Factory typedef for creating SSH service instances.
+typedef SshServiceFactory = SshServiceInterface Function();
+
+/// Factory typedef for creating SFTP service instances.
+typedef SftpServiceFactory = SftpServiceInterface Function();
+
+/// Callback for initializing SFTP from an SSH session.
+typedef SftpInitializer = Future<void> Function(
+    SshServiceInterface ssh, SftpServiceInterface sftp);
+
 class ConnectionManager implements ConnectionManagerInterface {
-  final KeyManager _keyManager;
-  final HostKeyStore? _hostKeyStore;
-  final Map<String, SshService> _sshServices = {};
-  final Map<String, SftpService> _sftpServices = {};
+  final SshServiceFactory _sshFactory;
+  final SftpServiceFactory _sftpFactory;
+  final SftpInitializer _sftpInitializer;
+  final Map<String, SshServiceInterface> _sshServices = {};
+  final Map<String, SftpServiceInterface> _sftpServices = {};
   final Map<String, Session> _sessions = {};
   final Map<String, StreamSubscription> _stateSubscriptions = {};
   bool _creatingSession = false;
@@ -28,17 +41,30 @@ class ConnectionManager implements ConnectionManagerInterface {
   @override
   List<Session> get sessions => _sessions.values.toList();
 
-  ConnectionManager({required KeyManager keyManager, HostKeyStore? hostKeyStore})
-      : _keyManager = keyManager,
-        _hostKeyStore = hostKeyStore {
+  ConnectionManager({
+    required KeyManager keyManager,
+    HostKeyStore? hostKeyStore,
+    SshServiceFactory? sshFactory,
+    SftpServiceFactory? sftpFactory,
+    SftpInitializer? sftpInitializer,
+  })  : _sshFactory = sshFactory ??
+            (() => SshService(keyManager: keyManager, hostKeyStore: hostKeyStore)),
+        _sftpFactory = sftpFactory ?? SftpService.new,
+        _sftpInitializer = sftpInitializer ?? _defaultSftpInit {
     // Emit initial empty list so StreamProvider starts with data, not loading state
     _sessionsController.add([]);
   }
 
+  static Future<void> _defaultSftpInit(
+      SshServiceInterface ssh, SftpServiceInterface sftp) async {
+    final sftpClient = await (ssh as SshService).openSftp();
+    sftp.initializeWithClient(sftpClient);
+  }
+
   @override
-  SshService? getSsh(String sessionId) => _sshServices[sessionId];
+  SshServiceInterface? getSsh(String sessionId) => _sshServices[sessionId];
   @override
-  SftpService? getSftp(String sessionId) => _sftpServices[sessionId];
+  SftpServiceInterface? getSftp(String sessionId) => _sftpServices[sessionId];
 
   @override
   Future<String> createSession(
@@ -55,8 +81,8 @@ class ConnectionManager implements ConnectionManagerInterface {
 
     final sessionId = DateTime.now().millisecondsSinceEpoch.toString();
     try {
-      final ssh = SshService(keyManager: _keyManager, hostKeyStore: _hostKeyStore);
-      final sftp = SftpService();
+      final ssh = _sshFactory();
+      final sftp = _sftpFactory();
 
       ssh.autoReconnect = autoReconnect;
       _sshServices[sessionId] = ssh;
@@ -96,8 +122,7 @@ class ConnectionManager implements ConnectionManagerInterface {
 
       // Initialize SFTP — allow session to survive even if SFTP fails
       try {
-        final sftpClient = await ssh.openSftp();
-        sftp.initializeWithClient(sftpClient);
+        await _sftpInitializer(ssh, sftp);
       } catch (e) {
         developer.log('SFTP unavailable: $e', name: 'ConnectionManager');
       }
@@ -134,8 +159,7 @@ class ConnectionManager implements ConnectionManagerInterface {
     final sftp = _sftpServices[sessionId];
     if (sftp != null) {
       try {
-        final sftpClient = await ssh.openSftp();
-        sftp.initializeWithClient(sftpClient);
+        await _sftpInitializer(ssh, sftp);
       } catch (e) {
         developer.log('SFTP unavailable after reconnect: $e', name: 'ConnectionManager');
       }
@@ -149,14 +173,16 @@ class ConnectionManager implements ConnectionManagerInterface {
   @override
   Future<void> dispose() async {
     _disposed = true;
-    for (final sub in _stateSubscriptions.values) {
+    // Copy values before iterating to avoid concurrent modification
+    // if closeSession is called during dispose cleanup.
+    for (final sub in List.of(_stateSubscriptions.values)) {
       await sub.cancel();
     }
     _stateSubscriptions.clear();
-    for (final ssh in _sshServices.values) {
+    for (final ssh in List.of(_sshServices.values)) {
       await ssh.dispose();
     }
-    for (final sftp in _sftpServices.values) {
+    for (final sftp in List.of(_sftpServices.values)) {
       sftp.dispose();
     }
     _sshServices.clear();

@@ -47,17 +47,15 @@ class _LocalBrowserState extends State<LocalBrowser> {
         return p.basename(a.path).compareTo(p.basename(b.path));
       });
 
-      // Collect file sizes asynchronously to avoid UI thread blocking
+      // Collect file sizes in parallel to avoid sequential I/O delays
       final sizes = <String, int>{};
-      for (final entity in entities) {
-        if (entity is File) {
-          try {
-            final stat = await entity.stat();
-            sizes[entity.path] = stat.size;
-          } catch (_) {
-            sizes[entity.path] = -1;
-          }
-        }
+      final files = entities.whereType<File>().toList();
+      final results = await Future.wait(
+        files.map((f) => f.stat().then((s) => MapEntry(f.path, s.size))
+            .catchError((_) => MapEntry(f.path, -1))),
+      );
+      for (final entry in results) {
+        sizes[entry.key] = entry.value;
       }
 
       if (!mounted || generation != _loadGeneration) return;
@@ -161,7 +159,7 @@ class _LocalBrowserState extends State<LocalBrowser> {
             children: [
               IconButton(
                 icon: const Icon(Icons.arrow_upward, size: 18),
-                onPressed: _navigateUp,
+                onPressed: _currentPath == '/' ? null : _navigateUp,
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
               ),

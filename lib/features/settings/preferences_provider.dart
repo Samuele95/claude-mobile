@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -110,8 +111,9 @@ class PreferencesNotifier extends Notifier<AppPreferences> {
 
   void _updateAndPersist(AppPreferences newState) {
     state = newState;
-    // Persist async — errors are caught to prevent silent disk/state divergence
-    newState.saveToDisk().catchError((_) {});
+    newState.saveToDisk().catchError((e) {
+      developer.log('Failed to persist preferences: $e', name: 'Preferences');
+    });
   }
 
   void setTheme(AppThemeName theme) =>

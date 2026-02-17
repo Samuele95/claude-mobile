@@ -18,8 +18,10 @@ class SftpService implements SftpServiceInterface {
   }
 
   /// Initialize with an already-opened SftpClient.
+  /// Closes any previously held client to avoid resource leaks.
   @override
   void initializeWithClient(SftpClient client) {
+    _sftp?.close();
     _sftp = client;
   }
 
@@ -183,6 +185,7 @@ class SftpService implements SftpServiceInterface {
 
   @override
   void dispose() {
+    _sftp?.close();
     _sftp = null;
     _transferController.close();
   }

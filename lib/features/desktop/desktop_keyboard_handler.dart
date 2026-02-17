@@ -27,40 +27,20 @@ class DesktopKeyboardHandler extends StatelessWidget {
   Widget build(BuildContext context) {
     return Shortcuts(
       shortcuts: {
-        LogicalKeySet(
-          LogicalKeyboardKey.control,
-          LogicalKeyboardKey.shift,
-          LogicalKeyboardKey.keyT,
-        ): const _NewSessionIntent(),
-        LogicalKeySet(
-          LogicalKeyboardKey.control,
-          LogicalKeyboardKey.shift,
-          LogicalKeyboardKey.keyW,
-        ): const _CloseSessionIntent(),
-        LogicalKeySet(
-          LogicalKeyboardKey.control,
-          LogicalKeyboardKey.tab,
-        ): const _NextSessionIntent(),
-        LogicalKeySet(
-          LogicalKeyboardKey.control,
-          LogicalKeyboardKey.shift,
-          LogicalKeyboardKey.tab,
-        ): const _PreviousSessionIntent(),
-        LogicalKeySet(
-          LogicalKeyboardKey.control,
-          LogicalKeyboardKey.shift,
-          LogicalKeyboardKey.keyB,
-        ): const _ToggleFilePanelIntent(),
-        LogicalKeySet(
-          LogicalKeyboardKey.control,
-          LogicalKeyboardKey.shift,
-          LogicalKeyboardKey.keyK,
-        ): const _CommandPaletteIntent(),
-        LogicalKeySet(
-          LogicalKeyboardKey.control,
-          LogicalKeyboardKey.shift,
-          LogicalKeyboardKey.slash,
-        ): const _ShowShortcutsIntent(),
+        const SingleActivator(LogicalKeyboardKey.keyT,
+            control: true, shift: true): const _NewSessionIntent(),
+        const SingleActivator(LogicalKeyboardKey.keyW,
+            control: true, shift: true): const _CloseSessionIntent(),
+        const SingleActivator(LogicalKeyboardKey.tab,
+            control: true): const _NextSessionIntent(),
+        const SingleActivator(LogicalKeyboardKey.tab,
+            control: true, shift: true): const _PreviousSessionIntent(),
+        const SingleActivator(LogicalKeyboardKey.keyB,
+            control: true, shift: true): const _ToggleFilePanelIntent(),
+        const SingleActivator(LogicalKeyboardKey.keyK,
+            control: true, shift: true): const _CommandPaletteIntent(),
+        const SingleActivator(LogicalKeyboardKey.slash,
+            control: true, shift: true): const _ShowShortcutsIntent(),
       },
       child: Actions(
         actions: {
