@@ -6,7 +6,6 @@ import 'models/transfer_item.dart';
 import 'storage/profile_repository.dart';
 import 'storage/key_manager.dart';
 import 'storage/host_key_store.dart';
-import 'ssh/ssh_service.dart';
 import 'ssh/ssh_service_interface.dart';
 import 'ssh/sftp_service_interface.dart';
 import 'ssh/connection_manager.dart';
@@ -65,7 +64,7 @@ final sessionTerminalControllerProvider =
     Provider.family<SshTerminalController?, String>((ref, id) {
   final ssh = ref.read(connectionManagerProvider).getSsh(id);
   if (ssh == null) return null;
-  final controller = SshTerminalController(ssh: ssh as SshService);
+  final controller = SshTerminalController(ssh: ssh);
   ref.onDispose(() => controller.dispose());
   return controller;
 });

@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:xterm/xterm.dart';
-import '../../core/ssh/ssh_service.dart';
+import '../../core/ssh/ssh_service_interface.dart';
 
 class SshTerminalController {
   static final _ansiArrowUp    = Uint8List.fromList([27, 91, 65]);
@@ -13,11 +13,11 @@ class SshTerminalController {
   static final _ansiEscape     = Uint8List.fromList([27]);
 
   final Terminal terminal;
-  final SshService _ssh;
+  final SshServiceInterface _ssh;
   final Utf8Decoder _utf8Decoder = const Utf8Decoder(allowMalformed: true);
   StreamSubscription<Uint8List>? _outputSub;
 
-  SshTerminalController({required SshService ssh})
+  SshTerminalController({required SshServiceInterface ssh})
       : _ssh = ssh,
         terminal = Terminal(maxLines: 10000) {
     terminal.onOutput = (data) {

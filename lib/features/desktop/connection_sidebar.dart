@@ -75,11 +75,14 @@ class _ConnectionSidebarState extends ConsumerState<ConnectionSidebar> {
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Row(
               children: [
-                Text(
-                  'Claude Carry',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                Flexible(
+                  child: Text(
+                    'Claude Carry',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
                 const Spacer(),
                 IconButton(
