@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../../core/models/server_profile.dart';
@@ -10,14 +11,18 @@ import '../../core/utils/command_builder.dart';
 class QuickPromptService {
   final KeyManager _keyManager;
   final ProfileRepository _profiles;
+  final FlutterSecureStorage _storage;
   final FlutterLocalNotificationsPlugin _notifications;
 
   QuickPromptService({
     required KeyManager keyManager,
     required ProfileRepository profiles,
+    required FlutterSecureStorage storage,
+    FlutterLocalNotificationsPlugin? notifications,
   })  : _keyManager = keyManager,
         _profiles = profiles,
-        _notifications = FlutterLocalNotificationsPlugin() {
+        _storage = storage,
+        _notifications = notifications ?? FlutterLocalNotificationsPlugin() {
     _initNotifications();
   }
 
@@ -52,10 +57,9 @@ class QuickPromptService {
           : profiles.first;
 
       // Fetch password from secure storage for password-auth profiles
-      final storage = _profiles.storage;
       String? password;
       if (profile.authMethod == AuthMethod.password) {
-        password = await storage.read(key: 'password_${profile.id}');
+        password = await _storage.read(key: 'password_${profile.id}');
       }
 
       final escapedPrompt = shellEscape(prompt);

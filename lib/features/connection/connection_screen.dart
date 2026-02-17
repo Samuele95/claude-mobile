@@ -4,9 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/models/server_profile.dart';
 import '../../core/models/session.dart';
 import '../../core/providers.dart';
+import '../../core/utils/connect_action.dart';
 import '../../core/utils/dialogs.dart';
 import '../../core/utils/platform_utils.dart';
-import '../../core/utils/session_actions.dart';
 import '../settings/settings_screen.dart';
 import '../settings/about_screen.dart';
 import '../settings/preferences_provider.dart';
@@ -24,26 +24,19 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
   String? _connectingProfileId;
 
   Future<void> _connect(ServerProfile profile) async {
-    if (_connectingProfileId != null) return;
-    setState(() => _connectingProfileId = profile.id);
+    final prefs = ref.read(preferencesProvider);
+    if (isMobile && prefs.haptics) HapticFeedback.lightImpact();
 
-    try {
-      final prefs = ref.read(preferencesProvider);
-      if (isMobile && prefs.haptics) HapticFeedback.lightImpact();
-
-      await connectToProfile(ref, profile);
-    } catch (e) {
-      if (mounted) {
-        showErrorDialog(
-          context,
-          title: 'Connection Failed',
-          error: e,
-          onRetry: () => _connect(profile),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _connectingProfileId = null);
-    }
+    await connectWithErrorHandling(
+      context: context,
+      ref: ref,
+      profile: profile,
+      isBusy: () => _connectingProfileId != null,
+      onBusyStart: () => setState(() => _connectingProfileId = profile.id),
+      onBusyEnd: () {
+        if (mounted) setState(() => _connectingProfileId = null);
+      },
+    );
   }
 
   @override

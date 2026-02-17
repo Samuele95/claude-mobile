@@ -8,6 +8,7 @@ import '../../core/utils/session_actions.dart';
 import '../files/file_panel.dart';
 import '../settings/preferences_provider.dart';
 import '../terminal/command_palette.dart';
+import '../terminal/reconnect_banner.dart';
 import '../terminal/session_tab_bar.dart';
 import 'connection_sidebar.dart';
 import 'desktop_keyboard_handler.dart';
@@ -189,8 +190,9 @@ class _DesktopShellState extends ConsumerState<DesktopShell>
                   if (activeSession != null &&
                       (activeSession.state == SshConnectionState.disconnected ||
                           activeSession.state == SshConnectionState.error))
-                    _DesktopReconnectBanner(
+                    ReconnectBanner(
                       state: activeSession.state,
+                      compact: true,
                       onReconnect: () => ref
                           .read(connectionManagerProvider)
                           .reconnectSession(activeSession.id),
@@ -267,48 +269,3 @@ class _DesktopShellState extends ConsumerState<DesktopShell>
   }
 }
 
-class _DesktopReconnectBanner extends StatelessWidget {
-  final SshConnectionState state;
-  final VoidCallback onReconnect;
-
-  const _DesktopReconnectBanner({
-    required this.state,
-    required this.onReconnect,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isError = state == SshConnectionState.error;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      color: (isError ? Colors.redAccent : Colors.amber).withValues(alpha: 0.12),
-      child: Row(
-        children: [
-          Icon(
-            isError ? Icons.error_outline : Icons.wifi_off,
-            size: 16,
-            color: isError ? Colors.redAccent : Colors.amber,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            isError ? 'Connection error' : 'Disconnected',
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-          const Spacer(),
-          TextButton.icon(
-            onPressed: onReconnect,
-            icon: const Icon(Icons.refresh, size: 14),
-            label: const Text('Reconnect'),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              minimumSize: const Size(0, 28),
-              textStyle: const TextStyle(fontSize: 12),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

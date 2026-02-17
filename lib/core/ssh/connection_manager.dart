@@ -8,7 +8,9 @@ import '../utils/command_builder.dart';
 import 'ssh_service.dart';
 import 'sftp_service.dart';
 
-class ConnectionManager {
+import 'connection_manager_interface.dart';
+
+class ConnectionManager implements ConnectionManagerInterface {
   final KeyManager _keyManager;
   final HostKeyStore? _hostKeyStore;
   final Map<String, SshService> _sshServices = {};
@@ -20,7 +22,9 @@ class ConnectionManager {
 
   final _sessionsController = StreamController<List<Session>>.broadcast();
 
+  @override
   Stream<List<Session>> get sessionsStream => _sessionsController.stream;
+  @override
   List<Session> get sessions => _sessions.values.toList();
 
   ConnectionManager({required KeyManager keyManager, HostKeyStore? hostKeyStore})
@@ -30,9 +34,12 @@ class ConnectionManager {
     _sessionsController.add([]);
   }
 
+  @override
   SshService? getSsh(String sessionId) => _sshServices[sessionId];
+  @override
   SftpService? getSftp(String sessionId) => _sftpServices[sessionId];
 
+  @override
   Future<String> createSession(
     ServerProfile profile, {
     String? password,
@@ -104,6 +111,7 @@ class ConnectionManager {
     }
   }
 
+  @override
   Future<void> closeSession(String sessionId) async {
     await _stateSubscriptions.remove(sessionId)?.cancel();
     final ssh = _sshServices.remove(sessionId);
@@ -115,6 +123,7 @@ class ConnectionManager {
     _emitSessions();
   }
 
+  @override
   Future<void> reconnectSession(String sessionId) async {
     final ssh = _sshServices[sessionId];
     if (ssh == null) return;
@@ -136,6 +145,7 @@ class ConnectionManager {
     if (!_disposed) _sessionsController.add(_sessions.values.toList());
   }
 
+  @override
   Future<void> dispose() async {
     _disposed = true;
     for (final sub in _stateSubscriptions.values) {

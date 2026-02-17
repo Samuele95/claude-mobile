@@ -9,8 +9,6 @@ class ProfileRepository {
 
   final FlutterSecureStorage _storage;
 
-  FlutterSecureStorage get storage => _storage;
-
   ProfileRepository({FlutterSecureStorage? storage})
       : _storage = storage ?? const FlutterSecureStorage();
 

@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/models/server_profile.dart';
 import '../../core/models/session.dart';
 import '../../core/providers.dart';
+import '../../core/utils/connect_action.dart';
 import '../../core/utils/dialogs.dart';
-import '../../core/utils/session_actions.dart';
 import '../connection/add_server_sheet.dart';
 import '../connection/key_display.dart';
 import '../settings/settings_screen.dart';
@@ -21,23 +21,16 @@ class _ConnectionSidebarState extends ConsumerState<ConnectionSidebar> {
   String? _connectingProfileId;
 
   Future<void> _connect(ServerProfile profile) async {
-    if (_connectingProfileId != null) return;
-    setState(() => _connectingProfileId = profile.id);
-
-    try {
-      await connectToProfile(ref, profile);
-    } catch (e) {
-      if (mounted) {
-        showErrorDialog(
-          context,
-          title: 'Connection Failed',
-          error: e,
-          onRetry: () => _connect(profile),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _connectingProfileId = null);
-    }
+    await connectWithErrorHandling(
+      context: context,
+      ref: ref,
+      profile: profile,
+      isBusy: () => _connectingProfileId != null,
+      onBusyStart: () => setState(() => _connectingProfileId = profile.id),
+      onBusyEnd: () {
+        if (mounted) setState(() => _connectingProfileId = null);
+      },
+    );
   }
 
   void _showAddDialog() {

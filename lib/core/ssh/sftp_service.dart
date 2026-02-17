@@ -4,10 +4,13 @@ import 'dart:typed_data';
 import 'package:dartssh2/dartssh2.dart';
 import '../models/transfer_item.dart';
 
-class SftpService {
+import 'sftp_service_interface.dart';
+
+class SftpService implements SftpServiceInterface {
   SftpClient? _sftp;
   final _transferController = StreamController<TransferItem>.broadcast();
 
+  @override
   Stream<TransferItem> get transferStream => _transferController.stream;
 
   Future<void> initialize(SSHClient client) async {
@@ -15,10 +18,12 @@ class SftpService {
   }
 
   /// Initialize with an already-opened SftpClient.
+  @override
   void initializeWithClient(SftpClient client) {
     _sftp = client;
   }
 
+  @override
   Future<List<SftpName>> listDirectory(String path) async {
     _ensureConnected();
     final items = await _sftp!.listdir(path);
@@ -32,11 +37,13 @@ class SftpService {
       });
   }
 
+  @override
   Future<SftpFileAttrs> stat(String path) async {
     _ensureConnected();
     return _sftp!.stat(path);
   }
 
+  @override
   Future<void> upload({
     required String localPath,
     required String remotePath,
@@ -84,6 +91,7 @@ class SftpService {
     }
   }
 
+  @override
   Future<void> download({
     required String remotePath,
     required String localPath,
@@ -128,21 +136,25 @@ class SftpService {
     }
   }
 
+  @override
   Future<void> mkdir(String path) async {
     _ensureConnected();
     await _sftp!.mkdir(path);
   }
 
+  @override
   Future<void> rename(String oldPath, String newPath) async {
     _ensureConnected();
     await _sftp!.rename(oldPath, newPath);
   }
 
+  @override
   Future<void> remove(String path) async {
     _ensureConnected();
     await _sftp!.remove(path);
   }
 
+  @override
   Future<void> rmdir(String path) async {
     _ensureConnected();
     await _sftp!.rmdir(path);
@@ -150,11 +162,13 @@ class SftpService {
 
   /// Resolve a path to its absolute form on the remote server.
   /// Useful for resolving '.' to the user's home directory.
+  @override
   Future<String> realpath(String path) async {
     _ensureConnected();
     return _sftp!.absolute(path);
   }
 
+  @override
   Future<Uint8List> readFileBytes(String path) async {
     _ensureConnected();
     final file = await _sftp!.open(path);
@@ -167,6 +181,7 @@ class SftpService {
     if (_sftp == null) throw StateError('SFTP not initialized');
   }
 
+  @override
   void dispose() {
     _sftp = null;
     _transferController.close();

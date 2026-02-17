@@ -7,9 +7,9 @@ import '../models/connection_state.dart';
 import '../storage/key_manager.dart';
 import '../storage/host_key_store.dart';
 
-/// Callback that retrieves the password on-demand from secure storage.
-/// This avoids caching plaintext passwords in memory for the session lifetime.
-typedef PasswordProvider = Future<String?> Function();
+import 'ssh_service_interface.dart';
+
+export 'ssh_service_interface.dart' show PasswordProvider;
 
 /// Exception thrown when a host key mismatch is detected (possible MITM).
 class HostKeyMismatchException implements Exception {
@@ -24,7 +24,7 @@ class HostKeyMismatchException implements Exception {
       'and re-add it.';
 }
 
-class SshService {
+class SshService implements SshServiceInterface {
   final KeyManager _keyManager;
   final HostKeyStore? _hostKeyStore;
 
@@ -48,12 +48,18 @@ class SshService {
   final _stateController = StreamController<SshConnectionState>.broadcast();
   final _outputController = StreamController<Uint8List>.broadcast();
 
+  @override
   Stream<SshConnectionState> get stateStream => _stateController.stream;
+  @override
   Stream<Uint8List> get outputStream => _outputController.stream;
+  @override
   SshConnectionState get state => _state;
+  @override
   bool get autoReconnect => _autoReconnect;
+  @override
   ServerProfile? get activeProfile => _activeProfile;
 
+  @override
   set autoReconnect(bool value) {
     _autoReconnect = value;
     if (!value) _reconnectAttempts = 0;
@@ -69,6 +75,7 @@ class SshService {
     _stateController.add(newState);
   }
 
+  @override
   Future<void> connect(
     ServerProfile profile, {
     String? password,
@@ -165,14 +172,17 @@ class SshService {
     );
   }
 
+  @override
   void write(String data) {
     _shell?.write(Uint8List.fromList(utf8.encode(data)));
   }
 
+  @override
   void writeBytes(Uint8List data) {
     _shell?.write(data);
   }
 
+  @override
   void resizePty(int width, int height) {
     _lastWidth = width;
     _lastHeight = height;
@@ -180,6 +190,7 @@ class SshService {
   }
 
   /// Execute a one-shot command (used by quick-prompt widget).
+  @override
   Future<String> executeCommand(
     ServerProfile profile,
     String command, {
@@ -202,6 +213,7 @@ class SshService {
     return _client!.sftp();
   }
 
+  @override
   Future<void> reconnect() async {
     if (_disposed || _activeProfile == null) return;
     final wasAutoReconnect = _autoReconnect;
@@ -239,6 +251,7 @@ class SshService {
     }
   }
 
+  @override
   Future<void> disconnect() async {
     _autoReconnect = false;
     _reconnectTimer?.cancel();
@@ -254,6 +267,7 @@ class SshService {
     _setState(SshConnectionState.disconnected);
   }
 
+  @override
   Future<void> dispose() async {
     _disposed = true;
     _reconnectTimer?.cancel();

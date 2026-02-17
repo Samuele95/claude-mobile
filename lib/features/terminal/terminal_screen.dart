@@ -16,6 +16,7 @@ import '../settings/about_screen.dart';
 import '../settings/preferences_provider.dart';
 import 'smart_toolbar.dart';
 import 'command_palette.dart';
+import 'reconnect_banner.dart';
 import 'session_tab_bar.dart';
 
 class TerminalScreen extends ConsumerStatefulWidget {
@@ -278,7 +279,7 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
             if (activeSession != null &&
                 (activeSession.state == SshConnectionState.disconnected ||
                     activeSession.state == SshConnectionState.error))
-              _ReconnectBanner(
+              ReconnectBanner(
                 state: activeSession.state,
                 onReconnect: () => ref
                     .read(connectionManagerProvider)
@@ -457,53 +458,3 @@ class _ConnectionPill extends StatelessWidget {
   }
 }
 
-class _ReconnectBanner extends StatelessWidget {
-  final SshConnectionState state;
-  final VoidCallback onReconnect;
-
-  const _ReconnectBanner({
-    required this.state,
-    required this.onReconnect,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isError = state == SshConnectionState.error;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: (isError ? Colors.redAccent : Colors.amber).withValues(alpha: 0.15),
-      child: Row(
-        children: [
-          Icon(
-            isError ? Icons.error_outline : Icons.wifi_off,
-            size: 18,
-            color: isError ? Colors.redAccent : Colors.amber,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              isError
-                  ? 'Connection error'
-                  : 'Disconnected',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurface,
-                  ),
-            ),
-          ),
-          TextButton.icon(
-            onPressed: onReconnect,
-            icon: const Icon(Icons.refresh, size: 16),
-            label: const Text('Reconnect'),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              minimumSize: const Size(0, 32),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

@@ -7,8 +7,10 @@ import 'storage/profile_repository.dart';
 import 'storage/key_manager.dart';
 import 'storage/host_key_store.dart';
 import 'ssh/ssh_service.dart';
-import 'ssh/sftp_service.dart';
+import 'ssh/ssh_service_interface.dart';
+import 'ssh/sftp_service_interface.dart';
 import 'ssh/connection_manager.dart';
+import 'ssh/connection_manager_interface.dart';
 import '../features/terminal/terminal_controller.dart';
 
 // --- Singletons ---
@@ -31,7 +33,7 @@ final hostKeyStoreProvider = Provider<HostKeyStore>(
 
 // --- Connection Manager (replaces singleton ssh/sftp) ---
 
-final connectionManagerProvider = Provider<ConnectionManager>((ref) {
+final connectionManagerProvider = Provider<ConnectionManagerInterface>((ref) {
   final manager = ConnectionManager(
     keyManager: ref.watch(keyManagerProvider),
     hostKeyStore: ref.watch(hostKeyStoreProvider),
@@ -51,11 +53,11 @@ final activeSessionIdProvider = StateProvider<String?>((ref) => null);
 
 // --- Family Providers (per-session) ---
 
-final sessionSshProvider = Provider.family<SshService?, String>((ref, id) {
+final sessionSshProvider = Provider.family<SshServiceInterface?, String>((ref, id) {
   return ref.watch(connectionManagerProvider).getSsh(id);
 });
 
-final sessionSftpProvider = Provider.family<SftpService?, String>((ref, id) {
+final sessionSftpProvider = Provider.family<SftpServiceInterface?, String>((ref, id) {
   return ref.watch(connectionManagerProvider).getSftp(id);
 });
 
@@ -63,7 +65,7 @@ final sessionTerminalControllerProvider =
     Provider.family<SshTerminalController?, String>((ref, id) {
   final ssh = ref.read(connectionManagerProvider).getSsh(id);
   if (ssh == null) return null;
-  final controller = SshTerminalController(ssh: ssh);
+  final controller = SshTerminalController(ssh: ssh as SshService);
   ref.onDispose(() => controller.dispose());
   return controller;
 });

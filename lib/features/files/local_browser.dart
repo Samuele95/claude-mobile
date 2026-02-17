@@ -120,12 +120,12 @@ class _LocalBrowserState extends State<LocalBrowser> {
     );
   }
 
-  void _showDesktopContextMenu(
-      BuildContext context, FileSystemEntity entity, TapDownDetails details) {
+  Future<void> _showDesktopContextMenu(
+      FileSystemEntity entity, TapDownDetails details) async {
     final path = entity.path;
     final overlay =
         Overlay.of(context).context.findRenderObject() as RenderBox;
-    showMenu<String>(
+    final value = await showMenu<String>(
       context: context,
       position: RelativeRect.fromRect(
         details.globalPosition & const Size(1, 1),
@@ -137,16 +137,16 @@ class _LocalBrowserState extends State<LocalBrowser> {
           const PopupMenuItem(
               value: 'send', child: Text('Send path to terminal')),
       ],
-    ).then((value) {
-      if (value == 'copy') {
-        Clipboard.setData(ClipboardData(text: path));
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Copied: $path')),
-        );
-      } else if (value == 'send') {
-        widget.onSendToTerminal?.call(path);
-      }
-    });
+    );
+    if (!mounted || value == null) return;
+    if (value == 'copy') {
+      Clipboard.setData(ClipboardData(text: path));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Copied: $path')),
+      );
+    } else if (value == 'send') {
+      widget.onSendToTerminal?.call(path);
+    }
   }
 
   @override
@@ -212,7 +212,7 @@ class _LocalBrowserState extends State<LocalBrowser> {
                                 _showContextMenu(context, entity),
                             onSecondaryTapDown: isDesktop
                                 ? (details) => _showDesktopContextMenu(
-                                    context, entity, details)
+                                    entity, details)
                                 : null,
                           );
                         },
