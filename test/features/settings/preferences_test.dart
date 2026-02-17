@@ -12,8 +12,6 @@ void main() {
       expect(prefs.haptics, isTrue);
       expect(prefs.wakeLock, isTrue);
       expect(prefs.autoReconnect, isTrue);
-      expect(prefs.notifyOnIdle, isTrue);
-      expect(prefs.idleThresholdSeconds, 10);
     });
 
     group('copyWith', () {

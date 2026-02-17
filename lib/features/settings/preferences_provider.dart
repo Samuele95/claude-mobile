@@ -40,8 +40,6 @@ class AppPreferences {
   final AppThemeName theme;
   final double fontSize;
   final bool haptics;
-  final bool notifyOnIdle;
-  final int idleThresholdSeconds;
   final bool wakeLock;
   final bool autoReconnect;
 
@@ -49,8 +47,6 @@ class AppPreferences {
     this.theme = AppThemeName.dark,
     this.fontSize = 14,
     this.haptics = true,
-    this.notifyOnIdle = true,
-    this.idleThresholdSeconds = 10,
     this.wakeLock = true,
     this.autoReconnect = true,
   });
@@ -59,8 +55,6 @@ class AppPreferences {
     AppThemeName? theme,
     double? fontSize,
     bool? haptics,
-    bool? notifyOnIdle,
-    int? idleThresholdSeconds,
     bool? wakeLock,
     bool? autoReconnect,
   }) {
@@ -68,8 +62,6 @@ class AppPreferences {
       theme: theme ?? this.theme,
       fontSize: fontSize ?? this.fontSize,
       haptics: haptics ?? this.haptics,
-      notifyOnIdle: notifyOnIdle ?? this.notifyOnIdle,
-      idleThresholdSeconds: idleThresholdSeconds ?? this.idleThresholdSeconds,
       wakeLock: wakeLock ?? this.wakeLock,
       autoReconnect: autoReconnect ?? this.autoReconnect,
     );
@@ -83,8 +75,6 @@ class AppPreferences {
       theme: AppThemeName.fromString(prefs.getString('themeName') ?? 'dark'),
       fontSize: prefs.getDouble('fontSize') ?? 14,
       haptics: prefs.getBool('haptics') ?? true,
-      notifyOnIdle: prefs.getBool('notifyOnIdle') ?? true,
-      idleThresholdSeconds: prefs.getInt('idleThresholdSeconds') ?? 10,
       wakeLock: prefs.getBool('wakeLock') ?? true,
       autoReconnect: prefs.getBool('autoReconnect') ?? true,
     );
@@ -95,8 +85,6 @@ class AppPreferences {
     await prefs.setString('themeName', theme.name);
     await prefs.setDouble('fontSize', fontSize);
     await prefs.setBool('haptics', haptics);
-    await prefs.setBool('notifyOnIdle', notifyOnIdle);
-    await prefs.setInt('idleThresholdSeconds', idleThresholdSeconds);
     await prefs.setBool('wakeLock', wakeLock);
     await prefs.setBool('autoReconnect', autoReconnect);
   }
@@ -124,12 +112,6 @@ class PreferencesNotifier extends Notifier<AppPreferences> {
 
   void setHaptics(bool enabled) =>
       _updateAndPersist(state.copyWith(haptics: enabled));
-
-  void setNotifyOnIdle(bool enabled) =>
-      _updateAndPersist(state.copyWith(notifyOnIdle: enabled));
-
-  void setIdleThreshold(int seconds) =>
-      _updateAndPersist(state.copyWith(idleThresholdSeconds: seconds));
 
   void setWakeLock(bool enabled) =>
       _updateAndPersist(state.copyWith(wakeLock: enabled));

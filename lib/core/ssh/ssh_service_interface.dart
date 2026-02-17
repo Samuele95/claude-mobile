@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:dartssh2/dartssh2.dart' show SftpClient;
 import '../models/server_profile.dart';
 import '../models/connection_state.dart';
 
@@ -33,6 +34,7 @@ abstract class SshServiceInterface {
     String command, {
     String? password,
   });
+  Future<SftpClient> openSftp();
   Future<void> reconnect();
   Future<void> disconnect();
   Future<void> dispose();

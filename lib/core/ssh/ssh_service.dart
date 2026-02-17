@@ -209,6 +209,7 @@ class SshService implements SshServiceInterface {
 
   /// Opens an SFTP session on the current SSH connection.
   /// Throws StateError if not connected.
+  @override
   Future<SftpClient> openSftp() async {
     if (_client == null) throw StateError('Not connected');
     return _client!.sftp();

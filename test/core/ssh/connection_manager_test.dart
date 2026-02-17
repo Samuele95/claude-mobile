@@ -61,6 +61,9 @@ class FakeSshService implements SshServiceInterface {
       '';
 
   @override
+  Future<SftpClient> openSftp() => throw UnimplementedError('No SFTP in test');
+
+  @override
   Future<void> reconnect() async {
     reconnectCalled = true;
     _stateController.add(SshConnectionState.connected);

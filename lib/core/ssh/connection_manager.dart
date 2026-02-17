@@ -57,7 +57,7 @@ class ConnectionManager implements ConnectionManagerInterface {
 
   static Future<void> _defaultSftpInit(
       SshServiceInterface ssh, SftpServiceInterface sftp) async {
-    final sftpClient = await (ssh as SshService).openSftp();
+    final sftpClient = await ssh.openSftp();
     sftp.initializeWithClient(sftpClient);
   }
 

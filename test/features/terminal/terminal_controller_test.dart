@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:typed_data';
+import 'package:dartssh2/dartssh2.dart' show SftpClient;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:claude_mobile/core/ssh/ssh_service_interface.dart';
 import 'package:claude_mobile/core/models/server_profile.dart';
@@ -49,6 +50,9 @@ class FakeSshService implements SshServiceInterface {
 
   @override
   Future<String> executeCommand(ServerProfile profile, String command, {String? password}) async => '';
+
+  @override
+  Future<SftpClient> openSftp() => throw UnimplementedError('No SFTP in test');
 
   @override
   Future<void> reconnect() async {}

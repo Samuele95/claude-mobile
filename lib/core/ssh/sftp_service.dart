@@ -13,10 +13,6 @@ class SftpService implements SftpServiceInterface {
   @override
   Stream<TransferItem> get transferStream => _transferController.stream;
 
-  Future<void> initialize(SSHClient client) async {
-    _sftp = await client.sftp();
-  }
-
   /// Initialize with an already-opened SftpClient.
   /// Closes any previously held client to avoid resource leaks.
   @override
@@ -174,9 +170,11 @@ class SftpService implements SftpServiceInterface {
   Future<Uint8List> readFileBytes(String path) async {
     _ensureConnected();
     final file = await _sftp!.open(path);
-    final bytes = await file.readBytes();
-    await file.close();
-    return bytes;
+    try {
+      return await file.readBytes();
+    } finally {
+      await file.close();
+    }
   }
 
   void _ensureConnected() {
