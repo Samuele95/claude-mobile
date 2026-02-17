@@ -7,7 +7,7 @@ import 'package:claude_mobile/core/models/server_profile.dart';
 /// Critical path: these commands are sent to remote servers via SSH.
 /// Incorrect escaping could cause command injection (security concern).
 void main() {
-  ServerProfile _profile({
+  ServerProfile makeProfile({
     ClaudeMode mode = ClaudeMode.standard,
     String customPrompt = '',
   }) {
@@ -24,25 +24,25 @@ void main() {
 
   group('buildStartupCommand', () {
     test('standard mode produces plain claude command', () {
-      final cmd = buildStartupCommand(_profile(mode: ClaudeMode.standard));
+      final cmd = buildStartupCommand(makeProfile(mode: ClaudeMode.standard));
       expect(cmd, 'claude');
     });
 
     test('skipPermissions mode includes --dangerously-skip-permissions flag', () {
-      final cmd = buildStartupCommand(_profile(mode: ClaudeMode.skipPermissions));
+      final cmd = buildStartupCommand(makeProfile(mode: ClaudeMode.skipPermissions));
       expect(cmd, 'claude --dangerously-skip-permissions');
     });
 
     test('customPrompt mode wraps prompt in -p flag with skip-permissions', () {
       final cmd = buildStartupCommand(
-        _profile(mode: ClaudeMode.customPrompt, customPrompt: 'fix the bug'),
+        makeProfile(mode: ClaudeMode.customPrompt, customPrompt: 'fix the bug'),
       );
       expect(cmd, 'claude -p "fix the bug" --dangerously-skip-permissions');
     });
 
     test('customPrompt escapes double quotes in user input', () {
       final cmd = buildStartupCommand(
-        _profile(
+        makeProfile(
           mode: ClaudeMode.customPrompt,
           customPrompt: 'say "hello"',
         ),
@@ -52,7 +52,7 @@ void main() {
 
     test('customPrompt escapes dollar signs to prevent variable expansion', () {
       final cmd = buildStartupCommand(
-        _profile(
+        makeProfile(
           mode: ClaudeMode.customPrompt,
           customPrompt: r'echo $HOME',
         ),
@@ -62,7 +62,7 @@ void main() {
 
     test('customPrompt escapes backticks to prevent command substitution', () {
       final cmd = buildStartupCommand(
-        _profile(
+        makeProfile(
           mode: ClaudeMode.customPrompt,
           customPrompt: 'run `whoami`',
         ),
@@ -72,7 +72,7 @@ void main() {
 
     test('customPrompt escapes backslashes', () {
       final cmd = buildStartupCommand(
-        _profile(
+        makeProfile(
           mode: ClaudeMode.customPrompt,
           customPrompt: r'path\to\file',
         ),
@@ -82,7 +82,7 @@ void main() {
 
     test('customPrompt escapes newlines', () {
       final cmd = buildStartupCommand(
-        _profile(
+        makeProfile(
           mode: ClaudeMode.customPrompt,
           customPrompt: 'line1\nline2',
         ),
