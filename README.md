@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <strong>Your AI dev environment, in your pocket.</strong>
+  <strong>SSH into your dev server. Let Claude ship code. From anywhere.</strong>
 </p>
 
 <p align="center">
@@ -25,14 +25,20 @@
 ---
 
 <p align="center">
+  <a href="https://github.com/Samuele95/claude-carry/releases"><img src="https://img.shields.io/badge/Android-APK-34A853?style=flat-square&logo=android&logoColor=white" alt="Android" /></a>
+  &nbsp;
+  <a href="https://github.com/Samuele95/claude-carry/releases"><img src="https://img.shields.io/badge/Linux-x64-FCC624?style=flat-square&logo=linux&logoColor=black" alt="Linux" /></a>
+  &nbsp;
+  <a href="https://github.com/Samuele95/claude-carry/releases"><img src="https://img.shields.io/badge/Windows-x64-0078D4?style=flat-square&logo=windows&logoColor=white" alt="Windows" /></a>
+</p>
+
+<p align="center">
   <img src="assets/logo.svg" width="128" height="128" alt="Claude Carry logo">
 </p>
 
-Claude Carry turns any device into a remote Claude Code terminal. SSH into your dev server from anywhere — the couch, the bus, the coffee shop — and let Claude refactor your codebase, write tests, or debug that production issue while you're away from your desk.
+You're on the bus. A deploy is broken. Your laptop is at home.
 
-No browser. No VPN portal. Just open the app, tap a server, and you're in.
-
-> **Currently available on Android.** iOS and desktop coming soon.
+Claude Carry gives you a full Claude Code terminal over SSH — on your phone, your Linux desktop, or your Windows machine. Connect to your dev server, tell Claude what to fix, and watch it refactor files, write tests, and push commits. No browser, no VPN portal, no forwarded ports. Open the app, pick a server, and you're in.
 
 ---
 
@@ -46,17 +52,17 @@ No browser. No VPN portal. Just open the app, tap a server, and you're in.
   </picture>
 </p>
 
-<p align="center"><em>Three screens. That's all it takes. Pick a server, talk to Claude, manage files.</em></p>
+<p align="center"><em>Pick a server. Talk to Claude. Manage files. Three screens on mobile, one window on desktop.</em></p>
 
 ---
 
 ## ⚡ Quick Start
 
-**1.** Download the latest build from [**Releases**](https://github.com/Samuele95/claude-carry/releases) and install it
+**1.** Download the latest build from [**Releases**](https://github.com/Samuele95/claude-carry/releases) — APK for Android, tar.gz for Linux, zip for Windows
 
 **2.** Add your server (hostname, port, username, auth method)
 
-**3.** Tap to connect — Claude launches automatically
+**3.** Connect — Claude launches automatically in your configured mode (standard shell, skip permissions, or custom prompt)
 
 ```
 You: "refactor the auth module to use JWT instead of sessions"
@@ -113,8 +119,36 @@ No need to `scp` from a separate app.
 |---|---|
 | 🔑 **SSH Key Auth** | Ed25519 keys, auto-generated and stored securely on-device |
 | 🔒 **Password Auth** | Encrypted on-device via `flutter_secure_storage` |
+| 🛡️ **TOFU Host Keys** | Trust-on-first-use verification — warns you if a server fingerprint changes |
+| ✅ **Connection Test** | Verify server connectivity before committing to a session |
 | 📝 **Server Profiles** | Save, edit, and manage multiple servers |
 | 🏠 **Home Widget** | Quick-prompt widget — fire off a Claude query without even opening the app |
+
+### Desktop
+
+On screens wider than 800px, Claude Carry switches to a three-panel layout: server sidebar on the left, terminal in the center, file browser on the right.
+
+| | |
+|---|---|
+| 🖥️ **Three-Panel Layout** | Sidebar, terminal, and file panel side by side |
+| 📐 **Adaptive Layout** | Automatically switches between mobile and desktop at 800px width |
+| 💾 **Window Persistence** | Window size and position are saved between sessions |
+| ⌨️ **Keyboard Shortcuts** | Full shortcut set for session and panel management (see below) |
+
+<details>
+<summary><strong>⌨️ Keyboard Shortcuts</strong></summary>
+
+| Shortcut | Action |
+|---|---|
+| `Ctrl+Shift+T` | New session |
+| `Ctrl+Shift+W` | Close session |
+| `Ctrl+Tab` | Next session |
+| `Ctrl+Shift+Tab` | Previous session |
+| `Ctrl+Shift+B` | Toggle file panel |
+| `Ctrl+Shift+K` | Command palette |
+| `Ctrl+Shift+/` | Show keyboard shortcuts |
+
+</details>
 
 ---
 
@@ -156,15 +190,18 @@ lib/
 │   ├── ssh/
 │   │   ├── ssh_service.dart         # PTY, auto-reconnect, keepalive
 │   │   ├── connection_manager.dart  # Multi-session orchestration
+│   │   ├── connection_tester.dart   # Pre-connect verification
 │   │   └── sftp_service.dart        # Uploads, downloads, progress
 │   └── storage/
 │       ├── key_manager.dart         # Ed25519 generation & Keystore
+│       ├── host_key_store.dart      # TOFU host key verification
 │       └── profile_repository.dart  # Encrypted profile CRUD
 ├── features/
 │   ├── connection/                  # Server list, add/edit, key display
 │   ├── terminal/                    # Terminal, toolbar, command palette
 │   ├── files/                       # Dual-pane local + remote browser
 │   ├── settings/                    # Preferences (theme, font, toggles)
+│   ├── desktop/                     # Three-panel shell, sidebar, shortcuts
 │   └── widget/                      # Home screen quick-prompt
 └── theme/
     ├── app_theme.dart               # Material 3 definitions
@@ -183,13 +220,14 @@ cd claude-carry
 flutter pub get
 
 # Android
-flutter build apk --debug     # or --release
+flutter build apk --release
 
-# iOS (coming soon)
-# flutter build ios
+# Linux
+sudo apt-get install -y ninja-build libgtk-3-dev
+flutter build linux --release
 
-# Desktop (coming soon)
-# flutter build linux / macos / windows
+# Windows (run in PowerShell)
+flutter build windows --release
 ```
 
 **Requirements:** Flutter 3.41+ · Dart 3.11+ · Java 21 (for Android builds)
@@ -200,6 +238,10 @@ flutter build apk --debug     # or --release
 
 We'd love your help. Whether it's a bug fix, new feature, screenshots, or just better docs — every contribution matters.
 
+<p>
+  <img src="https://img.shields.io/badge/tests-149_passing-brightgreen?style=flat-square" alt="149 tests passing" />
+</p>
+
 1. Read the [**Contributing Guide**](CONTRIBUTING.md)
 2. Check the [**open issues**](https://github.com/Samuele95/claude-carry/issues)
 3. Fork, branch, code, PR
@@ -208,11 +250,10 @@ We'd love your help. Whether it's a bug fix, new feature, screenshots, or just b
 <summary><strong>Ideas for contributions</strong></summary>
 
 - 📸 **Screenshots & screen recordings** for the README
-- 🧪 **Unit and widget tests** — coverage is low
 - 🌍 **Internationalization** — translations welcome
 - ♿ **Accessibility** — screen reader support, contrast
 - 🍎 **iOS port** — Flutter makes this straightforward
-- 🖥️ **Desktop port** — Linux, macOS, Windows
+- 🧪 **More tests** — always room for better coverage
 
 </details>
 

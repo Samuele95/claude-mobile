@@ -64,7 +64,7 @@ Look for issues labeled [`good first issue`](https://github.com/Samuele95/claude
 ### Ideas
 
 - **Screenshots** — we need screenshots for the README
-- **Tests** — unit and widget tests are sparse
+- **Tests** — 149 tests and growing, always room for more coverage
 - **Documentation** — usage guides, feature deep-dives
 - **Accessibility** — screen reader support, contrast improvements
 - **New features** — check the [issues](https://github.com/Samuele95/claude-carry/issues) for feature requests
