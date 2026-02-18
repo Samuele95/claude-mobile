@@ -20,6 +20,7 @@ dependencies:
   path: ^1.9.1
   wakelock_plus: ^1.2.8
   shared_preferences: ^2.3.4
+  flutter_svg: ^2.0.16
   url_launcher: ^6.3.1
   window_manager: ^0.4.3
 
@@ -31,7 +32,7 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/logo.png
+    - assets/logo.svg
   fonts:
     - family: JetBrainsMono
       fonts:

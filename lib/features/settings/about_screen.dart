@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AboutScreen extends StatelessWidget {
@@ -40,15 +41,10 @@ class AboutScreen extends StatelessWidget {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(22),
-                child: Image.asset(
-                  'assets/logo.png',
+                child: SvgPicture.asset(
+                  'assets/logo.svg',
                   width: 96,
                   height: 96,
-                  errorBuilder: (_, e, s) => const Icon(
-                    Icons.terminal_rounded,
-                    color: Colors.white,
-                    size: 48,
-                  ),
                 ),
               ),
             ),
@@ -156,10 +152,9 @@ class AboutScreen extends StatelessWidget {
   }
 
   Future<void> _launchUrl(BuildContext context, String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
+    try {
+      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    } catch (_) {
       // Fallback: copy to clipboard
       Clipboard.setData(ClipboardData(text: url));
       if (context.mounted) {

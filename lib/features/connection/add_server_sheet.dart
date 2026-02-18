@@ -161,6 +161,8 @@ class _AddServerSheetState extends ConsumerState<AddServerSheet> {
                     decoration:
                         const InputDecoration(labelText: 'Host / IP Address'),
                     keyboardType: TextInputType.url,
+                    autocorrect: false,
+                    enableSuggestions: false,
                     validator: (v) {
                       final host = v?.trim() ?? '';
                       if (host.isEmpty) return 'Required';
